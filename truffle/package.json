@@ -1,0 +1,27 @@
+{
+    "name": "@nilfoundation/proof-market-endpoint-eth",
+    "version": "0.0.1",
+    "dependencies": {
+      "@truffle/hdwallet-provider": "^2.0.1",
+      "web3": "^1.7.0"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/NilFoundation/proof-market-endpoint-eth.git"
+    },
+    "author": "Ilia Shirobokov, Vitaly Kuznetsov",
+    "license": "MIT",
+    "bugs": {
+      "url": "https://github.com/NilFoundation/proof-market-endpoint-eth/issues"
+    },
+    "homepage": "https://github.com/NilFoundation/proof-market-endpoint-eth",
+    "description": "=nil; Foundation's Proof Market Endpoint for Ethereum",
+    "files": [
+      "/contracts/**/*.sol",
+      "/build/contracts/*.json",
+      "!/contracts/mocks/**/*"
+    ],
+    "publishConfig": {
+      "registry": "https://npm.pkg.github.com"
+    }
+  }

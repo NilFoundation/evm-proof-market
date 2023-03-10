@@ -1,0 +1,38 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+    - id: black
+      language_version: python3.8
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+      args:
+        [
+          #"-E",
+          "-sn", # Don't display the score
+          "--rcfile=.pylintrc",
+        ]
+    - id: solium
+      name: Solidity linter
+      language: node
+      entry: solium
+      files: '\.sol$'
+      args:
+        [
+          "--dir=truffle/contracts/",
+          "--config=.soliumrc.json",
+          "--fix"
+        ]
+      additional_dependencies:
+      - ethlint@1.2.3
