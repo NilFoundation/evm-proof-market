@@ -25,6 +25,9 @@ TODO
 ## Usage
 TODO
 
+## Assumptions (temporary)
+- Users cannot cancel their orders
+- Users do not provide any timing constraints
 ## Architecture
 ### Actors:
 1. Eth user
@@ -46,7 +49,7 @@ TODO
     - Payments
 3. Etherium smart contract
 - Provides the following services:
-    - Bids (orders to buy a proof) `read/write`
+    - Bids (orders to buy a proof) `read/write/delete`
     - Statement `read`
     - Proof `read` and `verify&write` only for the `Relayer`
     - Payments
@@ -62,6 +65,7 @@ TODO
 struct Proof {
     uint256 id;
     uint256 statementId;
+    uint256 orderId;
     uint256 finalPrice;
     uint256 timestamp;
     address producer;
@@ -70,14 +74,19 @@ struct Proof {
 ```
 ### Order
 ```
+enum OrderStatus {OPEN, CLOSED}
+```
+```
 struct Order {
     uint256 id;
     uint256 statementId;
     bytes32 input;
     uint256 price;
-    uint256 timestamp;
+    uint256 createdOn;
+    uint256 updatedOn;
     address buyer;
-    enum status {OPEN, CLOSED};
+    OrderStatus status;
+    uint256 proofId;
 }
 ```
 
@@ -85,10 +94,25 @@ struct Order {
 ```
 struct Statement {
     uint256 id;
-    bytes32 input;
+    bytes32 definition;
     uint256 price;
-    uint256 updateTimestamp;
+    uint256 createdOn;
+    uint256 updatedOn;
 }
+```
+
+## Mappings
+### Proof
+```
+mapping(uint256 => Proof) public proofs;
+```
+### Order
+```
+mapping(uint256 => Order) public orders;
+```
+### Statement
+```
+mapping(uint256 => Statement) public statements;
 ```
 
 ## API
@@ -99,7 +123,13 @@ function getProof(uint256 _id) public view returns (Proof memory)
 ```
 #### Write
 ```
-function writeProof(uint256 _id, bytes32[] memory _proof) public
+function addProof(
+            uint256 statementId,
+            uint256 orderId,
+            uint256 finalPrice,
+            uint256 timestamp,
+            address producer,
+            bytes32[] memory proof) public
 ```
 ### Order
 #### Read
@@ -108,14 +138,14 @@ function getOrder(uint256 _id) public view returns (Order memory)
 ```
 #### Write
 ```
-function writeOrder(uint256 _statementId, bytes32 _input, uint256 _price) public
+function createOrder(
+        uint256 statementId,
+        bytes32 input,
+        uint256 price,
+        address buyer) public
 ```
 ### Statement
 #### Read
 ```
 function getStatement(uint256 _id) public view returns (Statement memory)
-```
-#### Write
-```
-function writeStatement(uint256 _id, bytes32 _input, uint256 _price) public
 ```
