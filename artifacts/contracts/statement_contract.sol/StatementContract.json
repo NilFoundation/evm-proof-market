@@ -1,0 +1,55 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "StatementContract",
+  "sourceName": "contracts/statement_contract.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "statements",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "definition",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "price",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "createdOn",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "updatedOn",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b5060e18061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063ac3f58a814602d575b600080fd5b606760383660046093565b600060208190529081526040902080546001820154600283015460038401546004909401549293919290919085565b604080519586526020860194909452928401919091526060830152608082015260a00160405180910390f35b60006020828403121560a457600080fd5b503591905056fea26469706673582212207e6a9ac7d1a0efbdb31bdf94934c84c7714d8129d595400e9490afe8125a88a064736f6c63430008120033",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063ac3f58a814602d575b600080fd5b606760383660046093565b600060208190529081526040902080546001820154600283015460038401546004909401549293919290919085565b604080519586526020860194909452928401919091526060830152608082015260a00160405180910390f35b60006020828403121560a457600080fd5b503591905056fea26469706673582212207e6a9ac7d1a0efbdb31bdf94934c84c7714d8129d595400e9490afe8125a88a064736f6c63430008120033",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}
