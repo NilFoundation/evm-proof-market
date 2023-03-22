@@ -26,8 +26,6 @@ contract OrderContract {
             statementId: statementId,
             input: input,
             price: price,
-            createdOn: block.timestamp,
-            updatedOn: block.timestamp,
             buyer: buyer,
             status: OrderStatus.OPEN,
             proofId: 0 // Initially undefined
@@ -42,7 +40,6 @@ contract OrderContract {
         require(orders[orderId].id == orderId, "Order not found");
 
         orders[orderId].status = OrderStatus.CLOSED;
-        orders[orderId].updatedOn = block.timestamp;
         orders[orderId].proofId = proofId;
     }
 

@@ -4,16 +4,18 @@ pragma solidity ^0.8.0;
 import "./statement_contract.sol";
 import "./order_contract.sol";
 import "./proof_contract.sol";
-import {Order, Proof} from "./structs.sol";
+import {Order, Proof, Statement} from "./structs.sol";
 
 
 contract ProofMarketEndpoint {
     OrderContract private orderContract;
     ProofContract private proofContract;
+    StatementContract private statementContract;
 
     constructor() {
         orderContract = new OrderContract();
         proofContract = new ProofContract(orderContract);
+        statementContract = new StatementContract();
     }
 
     function getOrder(uint256 orderId) public view returns (Order memory) {
@@ -22,6 +24,11 @@ contract ProofMarketEndpoint {
 
     function getProof(uint256 proofId) public view returns (Proof memory) {
         return proofContract.getProof(proofId);
+    }
+
+    function getStatement(uint256 statementId) public view returns (Statement memory)
+    {
+        return statementContract.getStatement(statementId);
     }
 
     function createOrder(
@@ -37,7 +44,6 @@ contract ProofMarketEndpoint {
         uint256 statementId,
         uint256 orderId,
         uint256 finalPrice,
-        uint256 timestamp,
         address producer,
         bytes32[] memory proof
     ) public {
@@ -45,10 +51,17 @@ contract ProofMarketEndpoint {
             statementId,
             orderId,
             finalPrice,
-            timestamp,
             producer,
             proof
         );
+    }
+
+    function addStatement(bytes32 definition) public {
+        statementContract.addStatement(definition);
+    }
+
+    function updateStatementPrice(uint256 statementId, uint256 price) public {
+        statementContract.updateStatementPrice(statementId, price);
     }
 }
 

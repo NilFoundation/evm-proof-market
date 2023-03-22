@@ -67,7 +67,6 @@ struct Proof {
     uint256 statementId;
     uint256 orderId;
     uint256 finalPrice;
-    uint256 timestamp;
     address producer;
     bytes32[] proof;
 }
@@ -82,8 +81,6 @@ struct Order {
     uint256 statementId;
     bytes32 input;
     uint256 price;
-    uint256 createdOn;
-    uint256 updatedOn;
     address buyer;
     OrderStatus status;
     uint256 proofId;
@@ -96,8 +93,6 @@ struct Statement {
     uint256 id;
     bytes32 definition;
     uint256 price;
-    uint256 createdOn;
-    uint256 updatedOn;
 }
 ```
 
@@ -127,7 +122,6 @@ function addProof(
             uint256 statementId,
             uint256 orderId,
             uint256 finalPrice,
-            uint256 timestamp,
             address producer,
             bytes32[] memory proof) public
 ```
