@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./statement_lib.sol";
-
+import { StatementLibrary } from "./libraries/statement_lib.sol";
 
 contract StatementContract {
     using StatementLibrary for StatementLibrary.StatementStorage;

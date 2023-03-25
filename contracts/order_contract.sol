@@ -1,46 +1,40 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import { Order, OrderStatus } from "./structs.sol";
+
+import { OrderLibrary } from "./libraries/order_lib.sol";
+import { Tools } from "./libraries/tools.sol";
 
 contract OrderContract {
+    using OrderLibrary for OrderLibrary.OrderStorage;
 
-    mapping(uint256 => Order) public orders;
-    uint256 public nextOrderId;
+    OrderLibrary.OrderStorage private orderStorage;
 
-    constructor() {
-        nextOrderId = 1;
+    event OrderCreated(uint256 indexed id, uint256 statementId, bytes32 input, uint256 price, address buyer);
+    event OrderClosed(uint256 indexed id, address producer, bytes32[] proof);
+
+    function createOrder(uint256 statementId, bytes32 input, uint256 price) 
+        public 
+        returns (uint256) 
+    {
+        uint256 id = orderStorage.createOrder(statementId, input, price, msg.sender);
+        emit OrderCreated(id, statementId, input, price, msg.sender);
+        return id;
     }
 
-    function getOrder(uint256 orderId) public view returns (Order memory) {
-        return orders[orderId];
+    function getOrder(uint256 id) 
+        public 
+        view 
+        returns (OrderLibrary.Order memory) 
+    {
+        return orderStorage.getOrder(id);
     }
 
-    function createOrder(
-        uint256 statementId,
-        bytes32 input,
-        uint256 price,
-        address buyer
-    ) public {
-        Order memory newOrder = Order({
-            id: nextOrderId,
-            statementId: statementId,
-            input: input,
-            price: price,
-            buyer: buyer,
-            status: OrderStatus.OPEN,
-            proofId: 0 // Initially undefined
-        });
-
-        orders[nextOrderId] = newOrder;
-
-        nextOrderId++;
+    function updateOrder(uint256 id, address producer, bytes32[] memory proof) 
+        public 
+    {
+        require(Tools.verifyProof(id, proof), "Proof is not valid");
+        
+        orderStorage.updateOrder(id, producer, proof);
+        emit OrderClosed(id, producer, proof);
     }
-
-    function closeOrder(uint256 orderId, uint256 proofId) public {
-        require(orders[orderId].id == orderId, "Order not found");
-
-        orders[orderId].status = OrderStatus.CLOSED;
-        orders[orderId].proofId = proofId;
-    }
-
 }

@@ -60,17 +60,6 @@ TODO
 - Sends eth adresses of proof producers to the Eth side
 
 ## Data structures
-### Proof
-```
-struct Proof {
-    uint256 id;
-    uint256 statementId;
-    uint256 orderId;
-    uint256 finalPrice;
-    address producer;
-    bytes32[] proof;
-}
-```
 ### Order
 ```
 enum OrderStatus {OPEN, CLOSED}
@@ -83,7 +72,8 @@ struct Order {
     uint256 price;
     address buyer;
     OrderStatus status;
-    uint256 proofId;
+    address producer;
+    bytes32[] proof;
 }
 ```
 
@@ -94,52 +84,4 @@ struct Statement {
     bytes32 definition;
     uint256 price;
 }
-```
-
-## Mappings
-### Proof
-```
-mapping(uint256 => Proof) public proofs;
-```
-### Order
-```
-mapping(uint256 => Order) public orders;
-```
-### Statement
-```
-mapping(uint256 => Statement) public statements;
-```
-
-## API
-### Proof
-#### Read
-```
-function getProof(uint256 _id) public view returns (Proof memory)
-```
-#### Write
-```
-function addProof(
-            uint256 statementId,
-            uint256 orderId,
-            uint256 finalPrice,
-            address producer,
-            bytes32[] memory proof) public
-```
-### Order
-#### Read
-```
-function getOrder(uint256 _id) public view returns (Order memory)
-```
-#### Write
-```
-function createOrder(
-        uint256 statementId,
-        bytes32 input,
-        uint256 price,
-        address buyer) public
-```
-### Statement
-#### Read
-```
-function getStatement(uint256 _id) public view returns (Statement memory)
 ```
