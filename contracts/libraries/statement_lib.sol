@@ -13,6 +13,10 @@ library StatementLibrary {
         uint256 statementCounter;
     }
 
+    event StatementCreated(uint256 indexed id, bytes32 definition, uint256 price);
+    event StatementPriceUpdated(uint256 indexed id, uint256 price);
+
+
     function createStatement(StatementStorage storage self, bytes32 definition, uint256 price) 
         internal 
         returns (uint256) 

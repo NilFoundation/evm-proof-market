@@ -9,9 +9,6 @@ contract StatementContract {
     StatementLibrary.StatementStorage private statementStorage;
     address public owner;
 
-    event StatementCreated(uint256 indexed id, bytes32 definition, uint256 price);
-    event StatementPriceUpdated(uint256 indexed id, uint256 price);
-
     constructor() {
         owner = msg.sender;
     }
@@ -27,7 +24,7 @@ contract StatementContract {
         returns (uint256) 
     {
         uint256 id = statementStorage.createStatement(definition, price);
-        emit StatementCreated(id, definition, price);
+        emit StatementLibrary.StatementCreated(id, definition, price);
         return id;
     }
 
@@ -44,6 +41,6 @@ contract StatementContract {
         onlyOwner 
     {
         statementStorage.updateStatementPrice(id, price);
-        emit StatementPriceUpdated(id, price);
+        emit StatementLibrary.StatementPriceUpdated(id, price);
     }
 }

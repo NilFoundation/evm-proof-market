@@ -20,6 +20,9 @@ library OrderLibrary {
         uint256 orderCounter;
     }
 
+    event OrderCreated(uint256 indexed id, uint256 statementId, bytes32 input, uint256 price, address buyer);
+    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32[] proof);
+
     function createOrder(
         OrderStorage storage self,
         uint256 statementId,
