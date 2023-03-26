@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import { StatementContract } from "./statement_contract.sol";
 import { OrderContract } from "./order_contract.sol";
-import { OrderLibrary } from "./libraries/order_lib.sol";
+import { OrderLibrary, Order, OrderStatus } from "./libraries/order_lib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract ProofMarketEndpoint is StatementContract, OrderContract {
@@ -25,9 +25,9 @@ contract ProofMarketEndpoint is StatementContract, OrderContract {
     }
 
     function closeOrder(uint256 orderId, bytes32[] memory proof, uint256 finalPrice, address producer) public {
-        OrderLibrary.Order memory order = getOrder(orderId);
+        Order memory order = getOrder(orderId);
 
-        require(order.status == OrderLibrary.OrderStatus.OPEN, "Order is not open");
+        require(order.status == OrderStatus.OPEN, "Order is not open");
 
         require(finalPrice <= order.price, "Invalid final price");
 

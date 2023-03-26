@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { OrderLibrary } from "./libraries/order_lib.sol";
+import { OrderLibrary, OrderStorage, Order } from "./libraries/order_lib.sol";
 import { Tools } from "./libraries/tools.sol";
 
 contract OrderContract {
-    using OrderLibrary for OrderLibrary.OrderStorage;
+    using OrderLibrary for OrderStorage;
 
-    OrderLibrary.OrderStorage private orderStorage;
+    OrderStorage private orderStorage;
 
     function createOrder(uint256 statementId, bytes32 input, uint256 price, address buyer) 
         internal 
@@ -20,7 +20,7 @@ contract OrderContract {
     function getOrder(uint256 id) 
         public 
         view 
-        returns (OrderLibrary.Order memory) 
+        returns (Order memory) 
     {
         return orderStorage.getOrder(id);
     }

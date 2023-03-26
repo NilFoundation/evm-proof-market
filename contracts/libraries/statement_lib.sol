@@ -1,23 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+struct StatementData {
+    uint256 id;
+    bytes32 definition;
+    Price price;
+}
+
+struct StatementStorage {
+    mapping(uint256 => StatementData) statements;
+    uint256 statementCounter;
+}
+
+struct Price {
+    uint256 price;
+}
+
 library StatementLibrary {
-    struct StatementData {
-        uint256 id;
-        bytes32 definition;
-        uint256 price;
-    }
 
-    struct StatementStorage {
-        mapping(uint256 => StatementData) statements;
-        uint256 statementCounter;
-    }
-
-    event StatementCreated(uint256 indexed id, bytes32 definition, uint256 price);
-    event StatementPriceUpdated(uint256 indexed id, uint256 price);
+    event StatementAdded(uint256 indexed id, bytes32 definition, Price price);
+    event StatementPriceUpdated(uint256 indexed id, Price price);
+    event StatementDefinitionUpdated(uint256 indexed id, bytes32 definition);
 
 
-    function createStatement(StatementStorage storage self, bytes32 definition, uint256 price) 
+    function addStatement(StatementStorage storage self, bytes32 definition, Price memory price) 
         internal 
         returns (uint256) 
     {
@@ -41,10 +47,24 @@ library StatementLibrary {
         return self.statements[id];
     }
 
-    function updateStatementPrice(StatementStorage storage self, uint256 id, uint256 price) 
+    function updateStatement(StatementStorage storage self, uint256 id, Price memory price) 
         internal 
     {
         StatementData storage statement = getStatement(self, id);
         statement.price = price;
+    }
+
+    function updateStatement(StatementStorage storage self, uint256 id, bytes32 definition) 
+        internal 
+    {
+        StatementData storage statement = getStatement(self, id);
+        statement.definition = definition;
+    }
+
+    function deleteStatement(StatementStorage storage self, uint256 id) 
+        internal 
+    {
+        require(id > 0 && id <= self.statementCounter, "Statement not found");
+        delete self.statements[id];
     }
 }

@@ -47,14 +47,14 @@ TODO
     - Matching
     - Proof `read/verify&write`
     - Payments
-3. Etherium smart contract
+3. Ethereum smart contract
 - Provides the following services:
-    - Bids (orders to buy a proof) `read/write/delete`
+    - Requests (orders to buy a proof) `read/write/delete`
     - Statement `read`
     - Proof `read` and `verify&write` only for the `Relayer`
     - Payments
 4. Relayer
-- Collects bid orders from the Eth side, sends them to the Proof Market
+- Collects requests from the Eth side, sends them to the Proof Market
 - Collects proofs from the Proof Market, sends them to the Eth side
 - Updates prices on Eth side
 - Sends eth adresses of proof producers to the Eth side
@@ -82,6 +82,13 @@ struct Order {
 struct Statement {
     uint256 id;
     bytes32 definition;
+    Price price;
+}
+```
+
+### Price
+```
+struct Price {
     uint256 price;
 }
 ```

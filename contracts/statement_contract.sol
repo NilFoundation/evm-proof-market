@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StatementLibrary } from "./libraries/statement_lib.sol";
+import { StatementLibrary, StatementStorage, StatementData, Price } from "./libraries/statement_lib.sol";
 
 contract StatementContract {
-    using StatementLibrary for StatementLibrary.StatementStorage;
+    using StatementLibrary for StatementStorage;
 
-    StatementLibrary.StatementStorage private statementStorage;
+    StatementStorage private statementStorage;
     address public owner;
 
     constructor() {
@@ -18,29 +18,46 @@ contract StatementContract {
         _;
     }
 
-    function createStatement(bytes32 definition, uint256 price) 
+    function addStatement(bytes32 definition, Price memory price) 
         public 
         onlyOwner 
         returns (uint256) 
     {
-        uint256 id = statementStorage.createStatement(definition, price);
-        emit StatementLibrary.StatementCreated(id, definition, price);
+        uint256 id = statementStorage.addStatement(definition, price);
+        emit StatementLibrary.StatementAdded(id, definition, price);
         return id;
     }
 
     function getStatement(uint256 id) 
         public 
         view 
-        returns (StatementLibrary.StatementData memory) 
+        returns (StatementData memory) 
     {
         return statementStorage.getStatement(id);
     }
 
-    function updateStatementPrice(uint256 id, uint256 price) 
+    function updateStatement(uint256 id, Price memory price) 
         public 
         onlyOwner 
     {
-        statementStorage.updateStatementPrice(id, price);
+        statementStorage.updateStatement(id, price);
         emit StatementLibrary.StatementPriceUpdated(id, price);
+    }
+
+    function updateStatement(uint256 id, bytes32 definition) 
+        public 
+        onlyOwner 
+    {
+        statementStorage.updateStatement(id, definition);
+        emit StatementLibrary.StatementDefinitionUpdated(id, definition);
+    }
+
+    function deleteStatement(uint256 id) 
+        public 
+        onlyOwner 
+    {
+        // TODO: delete all orders related to this statement
+        // or just do not allow to submit new orders for this statement
+        statementStorage.deleteStatement(id);
     }
 }
