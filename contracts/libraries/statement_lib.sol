@@ -18,11 +18,6 @@ struct Price {
 
 library StatementLibrary {
 
-    event StatementAdded(uint256 indexed id, bytes32 definition, Price price);
-    event StatementPriceUpdated(uint256 indexed id, Price price);
-    event StatementDefinitionUpdated(uint256 indexed id, bytes32 definition);
-
-
     function addStatement(StatementStorage storage self, bytes32 definition, Price memory price) 
         internal 
         returns (uint256) 

@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import { StatementContract } from "./statement_contract.sol";
+import { StatementLibrary, StatementData, Price } from "./libraries/statement_lib.sol";
 import { OrderContract } from "./order_contract.sol";
 import { OrderLibrary, Order, OrderStatus } from "./libraries/order_lib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -42,9 +43,4 @@ contract ProofMarketEndpoint is StatementContract, OrderContract {
 
         emit OrderLibrary.OrderClosed(orderId, producer, finalPrice, proof);
     }
-
-
-
-
-
 }

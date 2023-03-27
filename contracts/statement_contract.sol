@@ -9,6 +9,11 @@ contract StatementContract {
     StatementStorage private statementStorage;
     address public owner;
 
+    // TODO: emit prices properly
+    event StatementAdded(uint256 id, bytes32 definition, uint256 price);
+    event StatementDefinitionUpdated(uint256 id, bytes32 definition);
+    event StatementPriceUpdated(uint256 id, uint256 price);
+
     constructor() {
         owner = msg.sender;
     }
@@ -24,7 +29,7 @@ contract StatementContract {
         returns (uint256) 
     {
         uint256 id = statementStorage.addStatement(definition, price);
-        emit StatementLibrary.StatementAdded(id, definition, price);
+        emit StatementAdded(id, definition, price.price);
         return id;
     }
 
@@ -41,7 +46,7 @@ contract StatementContract {
         onlyOwner 
     {
         statementStorage.updateStatement(id, price);
-        emit StatementLibrary.StatementPriceUpdated(id, price);
+        emit StatementPriceUpdated(id, price.price);
     }
 
     function updateStatement(uint256 id, bytes32 definition) 
@@ -49,7 +54,7 @@ contract StatementContract {
         onlyOwner 
     {
         statementStorage.updateStatement(id, definition);
-        emit StatementLibrary.StatementDefinitionUpdated(id, definition);
+        emit StatementDefinitionUpdated(id, definition);
     }
 
     function deleteStatement(uint256 id) 
