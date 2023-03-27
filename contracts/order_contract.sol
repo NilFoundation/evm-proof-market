@@ -8,9 +8,20 @@ contract OrderContract {
     using OrderLibrary for OrderStorage;
 
     OrderStorage private orderStorage;
+    address public authorizedCaller;
+
+    constructor(address _authorizedCaller) {
+        authorizedCaller = _authorizedCaller;
+    }
+
+    modifier onlyAuthorizedCaller() {
+        require(msg.sender == authorizedCaller, "Caller is not authorized");
+        _;
+    }
 
     function createOrder(uint256 statementId, bytes32 input, uint256 price, address buyer) 
-        internal 
+        public
+        onlyAuthorizedCaller
         returns (uint256) 
     {
         uint256 id = orderStorage.createOrder(statementId, input, price, buyer);
@@ -26,7 +37,8 @@ contract OrderContract {
     }
 
     function closeOrder(uint256 id, address producer, bytes32[] memory proof) 
-        internal 
+        public
+        onlyAuthorizedCaller
     {
         require(Tools.verifyProof(id, proof), "Proof is not valid");
 

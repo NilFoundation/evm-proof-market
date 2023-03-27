@@ -36,7 +36,7 @@ describe("Statement tests", function () {
             const nonOwner = statementContract.connect(user);
 
             await expect(nonOwner.addStatement(definition, price)).to.be.revertedWith(
-                "Caller is not the owner"
+                "Caller is not authorized"
             );
         });
     });

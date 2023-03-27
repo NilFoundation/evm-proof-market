@@ -7,25 +7,25 @@ contract StatementContract {
     using StatementLibrary for StatementStorage;
 
     StatementStorage private statementStorage;
-    address public owner;
+    address public authorizedCaller;
 
     // TODO: emit prices properly
     event StatementAdded(uint256 id, bytes32 definition, uint256 price);
     event StatementDefinitionUpdated(uint256 id, bytes32 definition);
     event StatementPriceUpdated(uint256 id, uint256 price);
 
-    constructor() {
-        owner = msg.sender;
+    constructor(address _authorizedCaller) {
+        authorizedCaller = _authorizedCaller;
     }
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Caller is not the owner");
+    modifier onlyAuthorizedCaller() {
+        require(msg.sender == authorizedCaller, "Caller is not authorized");
         _;
     }
 
     function addStatement(bytes32 definition, Price memory price) 
         public 
-        onlyOwner 
+        onlyAuthorizedCaller 
         returns (uint256) 
     {
         uint256 id = statementStorage.addStatement(definition, price);
@@ -43,7 +43,7 @@ contract StatementContract {
 
     function updateStatement(uint256 id, Price memory price) 
         public 
-        onlyOwner 
+        onlyAuthorizedCaller 
     {
         statementStorage.updateStatement(id, price);
         emit StatementPriceUpdated(id, price.price);
@@ -51,7 +51,7 @@ contract StatementContract {
 
     function updateStatement(uint256 id, bytes32 definition) 
         public 
-        onlyOwner 
+        onlyAuthorizedCaller 
     {
         statementStorage.updateStatement(id, definition);
         emit StatementDefinitionUpdated(id, definition);
@@ -59,7 +59,7 @@ contract StatementContract {
 
     function deleteStatement(uint256 id) 
         public 
-        onlyOwner 
+        onlyAuthorizedCaller 
     {
         // TODO: delete all orders related to this statement
         // or just do not allow to submit new orders for this statement
