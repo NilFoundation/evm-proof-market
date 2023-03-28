@@ -18,7 +18,7 @@ struct Price {
 
 library StatementLibrary {
 
-    function addStatement(StatementStorage storage self, bytes32 definition, Price memory price) 
+    function add(StatementStorage storage self, bytes32 definition, Price memory price) 
         internal 
         returns (uint256) 
     {
@@ -33,7 +33,7 @@ library StatementLibrary {
         return self.statementCounter;
     }
 
-    function getStatement(StatementStorage storage self, uint256 id) 
+    function get(StatementStorage storage self, uint256 id) 
         internal 
         view 
         returns (StatementData storage) 
@@ -42,21 +42,21 @@ library StatementLibrary {
         return self.statements[id];
     }
 
-    function updateStatement(StatementStorage storage self, uint256 id, Price memory price) 
+    function update(StatementStorage storage self, uint256 id, Price memory price) 
         internal 
     {
-        StatementData storage statement = getStatement(self, id);
+        StatementData storage statement = get(self, id);
         statement.price = price;
     }
 
-    function updateStatement(StatementStorage storage self, uint256 id, bytes32 definition) 
+    function update(StatementStorage storage self, uint256 id, bytes32 definition) 
         internal 
     {
-        StatementData storage statement = getStatement(self, id);
+        StatementData storage statement = get(self, id);
         statement.definition = definition;
     }
 
-    function deleteStatement(StatementStorage storage self, uint256 id) 
+    function remove(StatementStorage storage self, uint256 id) 
         internal 
     {
         require(id > 0 && id <= self.statementCounter, "Statement not found");

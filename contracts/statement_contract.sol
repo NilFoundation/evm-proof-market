@@ -9,11 +9,6 @@ contract StatementContract {
     StatementStorage private statementStorage;
     address public authorizedCaller;
 
-    // TODO: emit prices properly
-    event StatementAdded(uint256 id, bytes32 definition, uint256 price);
-    event StatementDefinitionUpdated(uint256 id, bytes32 definition);
-    event StatementPriceUpdated(uint256 id, uint256 price);
-
     constructor(address _authorizedCaller) {
         authorizedCaller = _authorizedCaller;
     }
@@ -23,46 +18,43 @@ contract StatementContract {
         _;
     }
 
-    function addStatement(bytes32 definition, Price memory price) 
+    function add(bytes32 definition, Price memory price) 
         public 
         onlyAuthorizedCaller 
         returns (uint256) 
     {
-        uint256 id = statementStorage.addStatement(definition, price);
-        emit StatementAdded(id, definition, price.price);
+        uint256 id = statementStorage.add(definition, price);
         return id;
     }
 
-    function getStatement(uint256 id) 
+    function get(uint256 id) 
         public 
         view 
         returns (StatementData memory) 
     {
-        return statementStorage.getStatement(id);
+        return statementStorage.get(id);
     }
 
-    function updateStatement(uint256 id, Price memory price) 
+    function update(uint256 id, Price memory price) 
         public 
         onlyAuthorizedCaller 
     {
-        statementStorage.updateStatement(id, price);
-        emit StatementPriceUpdated(id, price.price);
+        statementStorage.update(id, price);
     }
 
-    function updateStatement(uint256 id, bytes32 definition) 
+    function update(uint256 id, bytes32 definition) 
         public 
         onlyAuthorizedCaller 
     {
-        statementStorage.updateStatement(id, definition);
-        emit StatementDefinitionUpdated(id, definition);
+        statementStorage.update(id, definition);
     }
 
-    function deleteStatement(uint256 id) 
+    function remove(uint256 id) 
         public 
         onlyAuthorizedCaller 
     {
         // TODO: delete all orders related to this statement
         // or just do not allow to submit new orders for this statement
-        statementStorage.deleteStatement(id);
+        statementStorage.remove(id);
     }
 }

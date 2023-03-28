@@ -19,29 +19,29 @@ contract OrderContract {
         _;
     }
 
-    function createOrder(uint256 statementId, bytes32 input, uint256 price, address buyer) 
+    function create(uint256 statementId, bytes32 input, uint256 price, address buyer) 
         public
         onlyAuthorizedCaller
         returns (uint256) 
     {
-        uint256 id = orderStorage.createOrder(statementId, input, price, buyer);
+        uint256 id = orderStorage.create(statementId, input, price, buyer);
         return id;
     }
 
-    function getOrder(uint256 id) 
+    function get(uint256 id) 
         public 
         view 
         returns (Order memory) 
     {
-        return orderStorage.getOrder(id);
+        return orderStorage.get(id);
     }
 
-    function closeOrder(uint256 id, address producer, bytes32[] memory proof) 
+    function close(uint256 id, address producer, bytes32[] memory proof) 
         public
         onlyAuthorizedCaller
     {
         require(Tools.verifyProof(id, proof), "Proof is not valid");
 
-        orderStorage.updateOrder(id, producer, proof);
+        orderStorage.update(id, producer, proof);
     }
 }

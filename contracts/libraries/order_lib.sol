@@ -21,10 +21,7 @@ struct OrderStorage {
 
 library OrderLibrary {
 
-    event OrderCreated(uint256 indexed id, uint256 statementId, bytes32 input, uint256 price, address buyer);
-    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32[] proof);
-
-    function createOrder(
+    function create(
         OrderStorage storage self,
         uint256 statementId,
         bytes32 input,
@@ -47,12 +44,12 @@ library OrderLibrary {
         return self.orderCounter;
     }
 
-    function getOrder(OrderStorage storage self, uint256 id) internal view returns (Order storage) {
+    function get(OrderStorage storage self, uint256 id) internal view returns (Order storage) {
         require(id > 0 && id <= self.orderCounter, "Order not found");
         return self.orders[id];
     }
 
-    function updateOrder(
+    function update(
         OrderStorage storage self,
         uint256 id,
         address producer,
