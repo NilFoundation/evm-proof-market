@@ -6,13 +6,16 @@ import { StatementLibrary, StatementData, Price } from "./libraries/statement_li
 import { OrderContract } from "./order_contract.sol";
 import { OrderLibrary, Order, OrderStatus } from "./libraries/order_lib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
-contract ProofMarketEndpoint {
+contract ProofMarketEndpoint is AccessControl {
     IERC20 public token;
     StatementContract public statementContract;
     OrderContract public orderContract;
-    address public owner;
+
+    bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     event OrderCreated(uint256 indexed id, uint256 statementId, bytes32 input, uint256 price, address buyer);
     event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32[] proof);
@@ -22,16 +25,25 @@ contract ProofMarketEndpoint {
     event StatementPriceUpdated(uint256 id, uint256 price);
     event StatementRemoved(uint256 id);
 
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Caller is not owner");
-        _;
-    }
-
     constructor(IERC20 _token) {
-        owner = msg.sender;
+        _setupRole(OWNER_ROLE, msg.sender);
         token = _token;
         statementContract = new StatementContract(address(this));
         orderContract = new OrderContract(address(this));
+    }
+
+    function grantRelayer(address relayer) 
+        public 
+        onlyRole(OWNER_ROLE) 
+    {
+        grantRole(RELAYER_ROLE, relayer);
+    }
+
+    function revokeRelayer(address relayer) 
+        public 
+        onlyRole(OWNER_ROLE) 
+    {
+        revokeRole(RELAYER_ROLE, relayer);
     }
 
     function getOrder(uint256 orderId) public view returns (Order memory) {
@@ -49,21 +61,22 @@ contract ProofMarketEndpoint {
         return id;
     }
 
-    function closeOrder(uint256 orderId, bytes32[] memory proof, uint256 finalPrice, address producer) public {
+    function closeOrder(uint256 orderId, bytes32[] memory proof, uint256 finalPrice, address producer) 
+        public 
+    {
+        // require(
+        //     hasRole(OWNER_ROLE, msg.sender) || hasRole(RELAYER_ROLE, msg.sender), 
+        //     "Caller is not owner or relayer"
+        // );
         Order memory order = orderContract.get(orderId);
-
         require(order.status == OrderStatus.OPEN, "Order is not open");
-
         require(finalPrice <= order.price, "Invalid final price");
 
         orderContract.close(orderId, producer, proof);
-        
         // TODO: do both transfers in one transaction
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
-
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
-
 
         emit OrderClosed(orderId, producer, finalPrice, proof);
     }
@@ -74,7 +87,7 @@ contract ProofMarketEndpoint {
 
     function addStatement(bytes32 definition, Price memory price) 
         public
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         uint256 id = statementContract.add(definition, price);
         emit StatementAdded(id, definition);
@@ -82,7 +95,7 @@ contract ProofMarketEndpoint {
 
     function updateStatementDefinition(uint256 id, bytes32 definition) 
         public 
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         statementContract.update(id, definition);
         emit StatementDefinitionUpdated(id, definition);
@@ -90,15 +103,18 @@ contract ProofMarketEndpoint {
 
     function updateStatementPrice(uint256 id, Price memory price) 
         public
-        onlyOwner
     {
+        require(
+            hasRole(OWNER_ROLE, msg.sender) || hasRole(RELAYER_ROLE, msg.sender), 
+            "Caller is not owner or relayer"
+        );
         statementContract.update(id, price);
         emit StatementPriceUpdated(id, price.price);
     }
 
     function removeStatement(uint256 id) 
         public
-        onlyOwner
+        onlyRole(OWNER_ROLE)
     {
         statementContract.remove(id);
         emit StatementRemoved(id);
