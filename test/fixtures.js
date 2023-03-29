@@ -1,17 +1,27 @@
 
 const { ethers } = require("hardhat");
 
-async function deployStatementFixture() {
-    const StatementContract = await ethers.getContractFactory("StatementContract");
-    const [owner, user] = await ethers.getSigners();
+async function deployProofMarketFixture() {
+    const ProofMarket = await ethers.getContractFactory("ProofMarketEndpoint");
+	const ERC20 = await ethers.getContractFactory("MockTocken");
 
-    const statementContract = await StatementContract.deploy(owner.address);
+    let [owner, user, producer, relayer] = await ethers.getSigners();
 
-    await statementContract.deployed();
+	const token = await ERC20.deploy();
+	await token.deployed();
 
-    return { StatementContract, statementContract, owner, user };
+    const proofMarket = await ProofMarket.deploy(token.address);
+    await proofMarket.deployed();
+
+	const initialBalance = ethers.utils.parseUnits("1000", 18);
+	// await token.transfer(user.address, initialBalance);
+	await token.mint(user.address, initialBalance);
+	// Approve the contract to spend the user's tokens
+	await token.connect(user).approve(proofMarket.address, initialBalance);
+
+    return { proofMarket, token, owner, user, producer, relayer };
 }
 
 module.exports = {
-  deployStatementFixture,
+	deployProofMarketFixture
 };
