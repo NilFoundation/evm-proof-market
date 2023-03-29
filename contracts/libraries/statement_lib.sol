@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 struct StatementData {
     uint256 id;
-    bytes32 definition;
+    Definition definition;
     Price price;
 }
 
@@ -16,9 +16,14 @@ struct Price {
     uint256 price;
 }
 
+struct Definition {
+    bytes32 verificationKey;
+    bytes32 provingKey;
+}
+
 library StatementLibrary {
 
-    function add(StatementStorage storage self, bytes32 definition, Price memory price) 
+    function add(StatementStorage storage self, Definition memory definition, Price memory price) 
         internal 
         returns (uint256) 
     {
@@ -49,7 +54,7 @@ library StatementLibrary {
         statement.price = price;
     }
 
-    function update(StatementStorage storage self, uint256 id, bytes32 definition) 
+    function update(StatementStorage storage self, uint256 id, Definition memory definition) 
         internal 
     {
         StatementData storage statement = get(self, id);

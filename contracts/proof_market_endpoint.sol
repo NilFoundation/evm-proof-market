@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import { StatementContract } from "./statement_contract.sol";
-import { StatementLibrary, StatementData, Price } from "./libraries/statement_lib.sol";
+import { StatementLibrary, StatementData, Price, Definition } from "./libraries/statement_lib.sol";
 import { OrderContract } from "./order_contract.sol";
 import { OrderLibrary, Order, OrderStatus } from "./libraries/order_lib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -19,9 +19,9 @@ contract ProofMarketEndpoint is AccessControl {
 
     event OrderCreated(uint256 indexed id, uint256 statementId, bytes32 input, uint256 price, address buyer);
     event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32[] proof);
-    // TODO: emit prices properly
-    event StatementAdded(uint256 id, bytes32 definition);
-    event StatementDefinitionUpdated(uint256 id, bytes32 definition);
+    // TODO: emit structs properly
+    event StatementAdded(uint256 id, Definition definition);
+    event StatementDefinitionUpdated(uint256 id, Definition definition);
     event StatementPriceUpdated(uint256 id, uint256 price);
     event StatementRemoved(uint256 id);
 
@@ -29,7 +29,7 @@ contract ProofMarketEndpoint is AccessControl {
         _setupRole(OWNER_ROLE, msg.sender);
         token = _token;
         statementContract = new StatementContract(address(this));
-        orderContract = new OrderContract(address(this));
+        orderContract = new OrderContract(address(this), address(token));
     }
 
     function grantRelayer(address relayer) 
@@ -54,8 +54,6 @@ contract ProofMarketEndpoint is AccessControl {
         public 
         returns (uint256) 
     {
-        require(token.transferFrom(msg.sender, address(this), price), "Token transfer failed");
-
         uint256 id = orderContract.create(statementId, input, price, msg.sender);
         emit OrderCreated(id, statementId, input, price, msg.sender);
         return id;
@@ -63,21 +61,9 @@ contract ProofMarketEndpoint is AccessControl {
 
     function closeOrder(uint256 orderId, bytes32[] memory proof, uint256 finalPrice, address producer) 
         public 
+        onlyRole(RELAYER_ROLE)
     {
-        // require(
-        //     hasRole(OWNER_ROLE, msg.sender) || hasRole(RELAYER_ROLE, msg.sender), 
-        //     "Caller is not owner or relayer"
-        // );
-        Order memory order = orderContract.get(orderId);
-        require(order.status == OrderStatus.OPEN, "Order is not open");
-        require(finalPrice <= order.price, "Invalid final price");
-
-        orderContract.close(orderId, producer, proof);
-        // TODO: do both transfers in one transaction
-        require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
-        uint256 remainingTokens = order.price - finalPrice;
-        require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
-
+        orderContract.close(orderId, proof, finalPrice, producer);
         emit OrderClosed(orderId, producer, finalPrice, proof);
     }
 
@@ -85,17 +71,17 @@ contract ProofMarketEndpoint is AccessControl {
         return statementContract.get(id);
     }
 
-    function addStatement(bytes32 definition, Price memory price) 
+    function addStatement(Definition memory definition, Price memory price) 
         public
-        onlyRole(OWNER_ROLE)
+        onlyRole(RELAYER_ROLE)
     {
         uint256 id = statementContract.add(definition, price);
         emit StatementAdded(id, definition);
     }
 
-    function updateStatementDefinition(uint256 id, bytes32 definition) 
+    function updateStatementDefinition(uint256 id, Definition memory definition) 
         public 
-        onlyRole(OWNER_ROLE)
+        onlyRole(RELAYER_ROLE)
     {
         statementContract.update(id, definition);
         emit StatementDefinitionUpdated(id, definition);
@@ -103,11 +89,8 @@ contract ProofMarketEndpoint is AccessControl {
 
     function updateStatementPrice(uint256 id, Price memory price) 
         public
+        onlyRole(RELAYER_ROLE)
     {
-        require(
-            hasRole(OWNER_ROLE, msg.sender) || hasRole(RELAYER_ROLE, msg.sender), 
-            "Caller is not owner or relayer"
-        );
         statementContract.update(id, price);
         emit StatementPriceUpdated(id, price.price);
     }

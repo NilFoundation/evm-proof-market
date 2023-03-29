@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { OrderLibrary, OrderStorage, Order } from "./libraries/order_lib.sol";
+import { OrderLibrary, OrderStorage, Order, OrderStatus } from "./libraries/order_lib.sol";
 import { Tools } from "./libraries/tools.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+
 
 contract OrderContract is AccessControl {
     using OrderLibrary for OrderStorage;
 
+    IERC20 public token;
     OrderStorage private orderStorage;
     bytes32 public constant AUTHORIZED_CALLER_ROLE = keccak256("AUTHORIZED_CALLER_ROLE");
 
-    constructor(address _authorizedCaller) {
+    constructor(address _authorizedCaller, address _token) {
         _setupRole(AUTHORIZED_CALLER_ROLE, _authorizedCaller);
+        token = IERC20(_token);
     }
 
     function create(uint256 statementId, bytes32 input, uint256 price, address buyer) 
@@ -20,6 +24,8 @@ contract OrderContract is AccessControl {
         onlyRole(AUTHORIZED_CALLER_ROLE)
         returns (uint256) 
     {
+        // TODO: to whom it would be better to send tokens?
+        require(token.transferFrom(buyer, address(this), price), "Transfer failed");
         uint256 id = orderStorage.create(statementId, input, price, buyer);
         return id;
     }
@@ -32,10 +38,19 @@ contract OrderContract is AccessControl {
         return orderStorage.get(id);
     }
 
-    function close(uint256 id, address producer, bytes32[] memory proof) 
+    function close(uint256 id, bytes32[] memory proof, uint256 finalPrice, address producer)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
     {
+        Order memory order = get(id);
+        require(order.status == OrderStatus.OPEN, "Order is not open");
+        require(finalPrice <= order.price, "Invalid final price");
+
+        // TODO: do both transfers in one transaction
+        require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
+        uint256 remainingTokens = order.price - finalPrice;
+        require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
+
         require(Tools.verifyProof(id, proof), "Proof is not valid");
 
         orderStorage.update(id, producer, proof);
