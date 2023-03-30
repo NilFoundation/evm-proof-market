@@ -14,15 +14,15 @@ contract ProofMarketEndpoint is AccessControl {
     StatementContract public statementContract;
     OrderContract public orderContract;
 
-    bytes32 public constant OWNER_ROLE = keccak256("OWNER_ROLE");
+    bytes32 public constant OWNER_ROLE = AccessControl.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
-    event OrderCreated(uint256 indexed id, uint256 statementId, bytes32 input, uint256 price, address buyer);
-    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32[] proof);
+    event OrderCreated(uint256 indexed id, uint256 statementId, bytes input, uint256 price, address buyer);
+    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes proof);
     // TODO: emit structs properly
     event StatementAdded(uint256 id, Definition definition);
     event StatementDefinitionUpdated(uint256 id, Definition definition);
-    event StatementPriceUpdated(uint256 id, uint256 price);
+    event StatementPriceUpdated(uint256 id, Price price);
     event StatementRemoved(uint256 id);
 
     constructor(IERC20 _token) {
@@ -50,7 +50,7 @@ contract ProofMarketEndpoint is AccessControl {
         return orderContract.get(orderId);
     }
     
-    function createOrder(uint256 statementId, bytes32 input, uint256 price) 
+    function createOrder(uint256 statementId, bytes memory input, uint256 price) 
         public 
         returns (uint256) 
     {
@@ -59,7 +59,7 @@ contract ProofMarketEndpoint is AccessControl {
         return id;
     }
 
-    function closeOrder(uint256 orderId, bytes32[] memory proof, uint256 finalPrice, address producer) 
+    function closeOrder(uint256 orderId, bytes memory proof, uint256 finalPrice, address producer) 
         public 
         onlyRole(RELAYER_ROLE)
     {
@@ -92,7 +92,7 @@ contract ProofMarketEndpoint is AccessControl {
         onlyRole(RELAYER_ROLE)
     {
         statementContract.update(id, price);
-        emit StatementPriceUpdated(id, price.price);
+        emit StatementPriceUpdated(id, price);
     }
 
     function removeStatement(uint256 id) 

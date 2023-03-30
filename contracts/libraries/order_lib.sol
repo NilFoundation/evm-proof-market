@@ -6,12 +6,12 @@ enum OrderStatus {OPEN, CLOSED}
 struct Order {
     uint256 id;
     uint256 statementId;
-    bytes32 input;
+    bytes input;
     uint256 price;
     address buyer;
     OrderStatus status;
     address producer;
-    bytes32[] proof;
+    bytes proof;
 }
 
 struct OrderStorage {
@@ -24,7 +24,7 @@ library OrderLibrary {
     function create(
         OrderStorage storage self,
         uint256 statementId,
-        bytes32 input,
+        bytes memory input,
         uint256 price,
         address buyer
     ) internal returns (uint256) {
@@ -38,7 +38,7 @@ library OrderLibrary {
             buyer: buyer,
             status: OrderStatus.OPEN,
             producer: address(0),
-            proof: new bytes32[](0)
+            proof: new bytes(0)
         });
 
         return self.orderCounter;
@@ -53,7 +53,7 @@ library OrderLibrary {
         OrderStorage storage self,
         uint256 id,
         address producer,
-        bytes32[] memory proof
+        bytes memory proof
     ) internal {
         require(id > 0 && id <= self.orderCounter, "Order not found");
 

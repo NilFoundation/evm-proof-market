@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 library Tools {
-    function verifyProof(uint256 orderId, bytes32[] memory proof) 
+    function verifyProof(uint256 orderId, bytes memory proof) 
         internal 
         pure 
         returns (bool) 

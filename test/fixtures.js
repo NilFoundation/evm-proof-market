@@ -7,17 +7,19 @@ async function deployProofMarketFixture() {
 
     let [owner, user, producer, relayer] = await ethers.getSigners();
 
+	// Deploy the token contract
 	const token = await ERC20.deploy();
 	await token.deployed();
-
+	// Deploy the proof market contract
     const proofMarket = await ProofMarket.deploy(token.address);
     await proofMarket.deployed();
-
+	// Set the relayer role
+	await proofMarket.grantRole(proofMarket.RELAYER_ROLE(), relayer.address);
+	// Mint some tokens to the user
 	const initialBalance = ethers.utils.parseUnits("1000", 18);
-	// await token.transfer(user.address, initialBalance);
 	await token.mint(user.address, initialBalance);
 	// Approve the contract to spend the user's tokens
-	await token.connect(user).approve(proofMarket.address, initialBalance);
+	await token.connect(user).approve(proofMarket.orderContract(), initialBalance);
 
     return { proofMarket, token, owner, user, producer, relayer };
 }

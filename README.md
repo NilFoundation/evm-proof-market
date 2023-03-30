@@ -68,12 +68,12 @@ enum OrderStatus {OPEN, CLOSED}
 struct Order {
     uint256 id;
     uint256 statementId;
-    bytes32 input;
+    bytes input;
     uint256 price;
     address buyer;
     OrderStatus status;
     address producer;
-    bytes32[] proof;
+    bytes proof;
 }
 ```
 
@@ -81,7 +81,7 @@ struct Order {
 ```
 struct Statement {
     uint256 id;
-    bytes32 definition;
+    Definition definition;
     Price price;
 }
 ```
@@ -90,5 +90,13 @@ struct Statement {
 ```
 struct Price {
     uint256 price;
+}
+```
+
+### Definition
+```
+struct Definition {
+    bytes verificationKey;
+    bytes provingKey;
 }
 ```

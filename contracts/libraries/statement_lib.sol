@@ -17,8 +17,8 @@ struct Price {
 }
 
 struct Definition {
-    bytes32 verificationKey;
-    bytes32 provingKey;
+    bytes verificationKey;
+    bytes provingKey;
 }
 
 library StatementLibrary {
