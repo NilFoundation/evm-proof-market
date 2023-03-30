@@ -14,39 +14,39 @@ contract StatementContract is AccessControl {
         _setupRole(AUTHORIZED_CALLER_ROLE, _authorizedCaller);
     }
 
-    function add(Definition memory definition, Price memory price) 
-        public 
-        onlyRole(AUTHORIZED_CALLER_ROLE) 
-        returns (uint256) 
+    function add(Definition memory definition, Price memory price)
+        public
+        onlyRole(AUTHORIZED_CALLER_ROLE)
+        returns (uint256)
     {
         uint256 id = statementStorage.add(definition, price);
         return id;
     }
 
-    function get(uint256 id) 
-        public 
-        view 
-        returns (StatementData memory) 
+    function get(uint256 id)
+        public
+        view
+        returns (StatementData memory)
     {
         return statementStorage.get(id);
     }
 
-    function update(uint256 id, Price memory price) 
-        public 
-        onlyRole(AUTHORIZED_CALLER_ROLE) 
+    function update(uint256 id, Price memory price)
+        public
+        onlyRole(AUTHORIZED_CALLER_ROLE)
     {
         statementStorage.update(id, price);
     }
 
-    function update(uint256 id, Definition memory definition) 
-        public 
-        onlyRole(AUTHORIZED_CALLER_ROLE)  
+    function update(uint256 id, Definition memory definition)
+        public
+        onlyRole(AUTHORIZED_CALLER_ROLE)
     {
         statementStorage.update(id, definition);
     }
 
-    function remove(uint256 id) 
-        public 
+    function remove(uint256 id)
+        public
         onlyRole(AUTHORIZED_CALLER_ROLE)
     {
         // TODO: delete all orders related to this statement

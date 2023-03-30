@@ -17,15 +17,15 @@ describe("Proof market  tests", function () {
     });
 
     describe("Statement tests", function () {
-        it("should create a new statement", async function () {    
+        it("should create a new statement", async function () {
             const tx = await proofMarket.connect(relayer).addStatement(definition, price);
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "StatementAdded");
-        
+
             expect(event.args.id).to.equal(1);
             expect(event.args.definition.verificationKey).to.equal(definition.verificationKey);
             expect(event.args.definition.provingKey).to.equal(definition.provingKey);
-        
+
             const statement = await proofMarket.getStatement(1);
             expect(statement.id).to.equal(1);
             expect(statement.definition.verificationKey).to.equal(definition.verificationKey);
@@ -36,7 +36,7 @@ describe("Proof market  tests", function () {
         it("should revert if the caller is not the contract owner", async function () {
             // connect to the contract as a non-owner
             const nonOwner = proofMarket.connect(user);
-            
+
             await expect(nonOwner.addStatement(definition, price))
             .to.be.revertedWith(/AccessControl/);
         });
@@ -100,7 +100,7 @@ describe("Proof market  tests", function () {
             const orderId = 1;
             const proof = ethers.utils.formatBytes32String("Example proof");
             const finalPrice = ethers.utils.parseUnits("9", 18);
-            
+
             await expect(proofMarket.connect(relayer).closeOrder(orderId, proof, finalPrice, producer.address))
             .to.emit(proofMarket, "OrderClosed")
             .withArgs(orderId, producer.address, finalPrice, proof);
@@ -110,7 +110,7 @@ describe("Proof market  tests", function () {
             const orderId = 1;
             const proof = ethers.utils.formatBytes32String("Example proof");
             const finalPrice = ethers.utils.parseUnits("9", 18);
-            
+
             const nonRelayer = proofMarket.connect(user);
 
             await expect(nonRelayer.closeOrder(orderId, proof, finalPrice, producer.address))

@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-enum OrderStatus {OPEN, CLOSED}
-
-struct Order {
-    uint256 id;
-    uint256 statementId;
-    bytes input;
-    uint256 price;
-    address buyer;
-    OrderStatus status;
-    address producer;
-    bytes proof;
-}
-
-struct OrderStorage {
-    mapping(uint256 => Order) orders;
-    uint256 orderCounter;
-}
-
 library OrderLibrary {
+
+    enum OrderStatus {OPEN, CLOSED}
+
+    struct Order {
+        uint256 id;
+        uint256 statementId;
+        bytes input;
+        uint256 price;
+        address buyer;
+        OrderStatus status;
+        address producer;
+        bytes proof;
+    }
+
+    struct OrderStorage {
+        mapping(uint256 => Order) orders;
+        uint256 orderCounter;
+    }
 
     function create(
         OrderStorage storage self,

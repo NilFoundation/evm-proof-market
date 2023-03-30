@@ -19,10 +19,10 @@ contract OrderContract is AccessControl {
         token = IERC20(_token);
     }
 
-    function create(uint256 statementId, bytes memory input, uint256 price, address buyer) 
+    function create(uint256 statementId, bytes memory input, uint256 price, address buyer)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
-        returns (uint256) 
+        returns (uint256)
     {
         // TODO: check if statement exists
         // TODO: to whom it would be better to send tokens?
@@ -31,10 +31,10 @@ contract OrderContract is AccessControl {
         return id;
     }
 
-    function get(uint256 id) 
-        public 
-        view 
-        returns (Order memory) 
+    function get(uint256 id)
+        public
+        view
+        returns (Order memory)
     {
         return orderStorage.get(id);
     }

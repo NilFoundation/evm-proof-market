@@ -32,46 +32,59 @@ contract ProofMarketEndpoint is AccessControl {
         orderContract = new OrderContract(address(this), address(token));
     }
 
-    function grantRelayer(address relayer) 
-        public 
-        onlyRole(OWNER_ROLE) 
+    //////////////////////////////
+    // Access control
+    //////////////////////////////
+
+    function grantRelayer(address relayer)
+        public
+        onlyRole(OWNER_ROLE)
     {
         grantRole(RELAYER_ROLE, relayer);
     }
 
-    function revokeRelayer(address relayer) 
-        public 
-        onlyRole(OWNER_ROLE) 
+    function revokeRelayer(address relayer)
+        public
+        onlyRole(OWNER_ROLE)
     {
         revokeRole(RELAYER_ROLE, relayer);
     }
 
+
+    //////////////////////////////
+    // Orders API
+    //////////////////////////////
+
     function getOrder(uint256 orderId) public view returns (Order memory) {
         return orderContract.get(orderId);
     }
-    
-    function createOrder(uint256 statementId, bytes memory input, uint256 price) 
-        public 
-        returns (uint256) 
+
+    function createOrder(uint256 statementId, bytes memory input, uint256 price)
+        public
+        returns (uint256)
     {
         uint256 id = orderContract.create(statementId, input, price, msg.sender);
         emit OrderCreated(id, statementId, input, price, msg.sender);
         return id;
     }
 
-    function closeOrder(uint256 orderId, bytes memory proof, uint256 finalPrice, address producer) 
-        public 
+    function closeOrder(uint256 orderId, bytes memory proof, uint256 finalPrice, address producer)
+        public
         onlyRole(RELAYER_ROLE)
     {
         orderContract.close(orderId, proof, finalPrice, producer);
         emit OrderClosed(orderId, producer, finalPrice, proof);
     }
 
+    //////////////////////////////
+    // Statements API
+    //////////////////////////////
+
     function getStatement(uint256 id) public view returns (StatementData memory) {
         return statementContract.get(id);
     }
 
-    function addStatement(Definition memory definition, Price memory price) 
+    function addStatement(Definition memory definition, Price memory price)
         public
         onlyRole(RELAYER_ROLE)
     {
@@ -79,15 +92,15 @@ contract ProofMarketEndpoint is AccessControl {
         emit StatementAdded(id, definition);
     }
 
-    function updateStatementDefinition(uint256 id, Definition memory definition) 
-        public 
+    function updateStatementDefinition(uint256 id, Definition memory definition)
+        public
         onlyRole(RELAYER_ROLE)
     {
         statementContract.update(id, definition);
         emit StatementDefinitionUpdated(id, definition);
     }
 
-    function updateStatementPrice(uint256 id, Price memory price) 
+    function updateStatementPrice(uint256 id, Price memory price)
         public
         onlyRole(RELAYER_ROLE)
     {
@@ -95,7 +108,7 @@ contract ProofMarketEndpoint is AccessControl {
         emit StatementPriceUpdated(id, price);
     }
 
-    function removeStatement(uint256 id) 
+    function removeStatement(uint256 id)
         public
         onlyRole(OWNER_ROLE)
     {
