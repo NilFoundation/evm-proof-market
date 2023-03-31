@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { OrderLibrary, OrderStorage, Order, OrderStatus } from "./libraries/order_lib.sol";
+import { OrderLibrary } from "./libraries/order_lib.sol";
 import { Tools } from "./libraries/tools.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
 contract OrderContract is AccessControl {
-    using OrderLibrary for OrderStorage;
+    using OrderLibrary for OrderLibrary.OrderStorage;
 
     IERC20 public token;
-    OrderStorage private orderStorage;
+    OrderLibrary.OrderStorage private orderStorage;
     bytes32 public constant AUTHORIZED_CALLER_ROLE = keccak256("AUTHORIZED_CALLER_ROLE");
 
     constructor(address _authorizedCaller, address _token) {
@@ -34,7 +34,7 @@ contract OrderContract is AccessControl {
     function get(uint256 id)
         public
         view
-        returns (Order memory)
+        returns (OrderLibrary.Order memory)
     {
         return orderStorage.get(id);
     }
@@ -43,8 +43,8 @@ contract OrderContract is AccessControl {
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
     {
-        Order memory order = get(id);
-        require(order.status == OrderStatus.OPEN, "Order is not open");
+        OrderLibrary.Order memory order = get(id);
+        require(order.status == OrderLibrary.OrderStatus.OPEN, "Order is not open");
         require(finalPrice <= order.price, "Invalid final price");
 
         // TODO: do both transfers in one transaction

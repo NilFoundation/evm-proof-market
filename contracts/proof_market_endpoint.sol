@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import { StatementContract } from "./statement_contract.sol";
-import { StatementLibrary, StatementData, Price, Definition } from "./libraries/statement_lib.sol";
+import { StatementLibrary } from "./libraries/statement_lib.sol";
 import { OrderContract } from "./order_contract.sol";
-import { OrderLibrary, Order, OrderStatus } from "./libraries/order_lib.sol";
+import { OrderLibrary } from "./libraries/order_lib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
@@ -20,9 +20,9 @@ contract ProofMarketEndpoint is AccessControl {
     event OrderCreated(uint256 indexed id, uint256 statementId, bytes input, uint256 price, address buyer);
     event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes proof);
     // TODO: emit structs properly
-    event StatementAdded(uint256 id, Definition definition);
-    event StatementDefinitionUpdated(uint256 id, Definition definition);
-    event StatementPriceUpdated(uint256 id, Price price);
+    event StatementAdded(uint256 id, StatementLibrary.Definition definition);
+    event StatementDefinitionUpdated(uint256 id, StatementLibrary.Definition definition);
+    event StatementPriceUpdated(uint256 id, StatementLibrary.Price price);
     event StatementRemoved(uint256 id);
 
     constructor(IERC20 _token) {
@@ -55,7 +55,7 @@ contract ProofMarketEndpoint is AccessControl {
     // Orders API
     //////////////////////////////
 
-    function getOrder(uint256 orderId) public view returns (Order memory) {
+    function getOrder(uint256 orderId) public view returns (OrderLibrary.Order memory) {
         return orderContract.get(orderId);
     }
 
@@ -80,11 +80,11 @@ contract ProofMarketEndpoint is AccessControl {
     // Statements API
     //////////////////////////////
 
-    function getStatement(uint256 id) public view returns (StatementData memory) {
+    function getStatement(uint256 id) public view returns (StatementLibrary.StatementData memory) {
         return statementContract.get(id);
     }
 
-    function addStatement(Definition memory definition, Price memory price)
+    function addStatement(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
         public
         onlyRole(RELAYER_ROLE)
     {
@@ -92,7 +92,7 @@ contract ProofMarketEndpoint is AccessControl {
         emit StatementAdded(id, definition);
     }
 
-    function updateStatementDefinition(uint256 id, Definition memory definition)
+    function updateStatementDefinition(uint256 id, StatementLibrary.Definition memory definition)
         public
         onlyRole(RELAYER_ROLE)
     {
@@ -100,7 +100,7 @@ contract ProofMarketEndpoint is AccessControl {
         emit StatementDefinitionUpdated(id, definition);
     }
 
-    function updateStatementPrice(uint256 id, Price memory price)
+    function updateStatementPrice(uint256 id, StatementLibrary.Price memory price)
         public
         onlyRole(RELAYER_ROLE)
     {

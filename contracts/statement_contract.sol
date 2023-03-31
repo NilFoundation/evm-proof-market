@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { StatementLibrary, StatementStorage, StatementData, Price, Definition } from "./libraries/statement_lib.sol";
+import { StatementLibrary } from "./libraries/statement_lib.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 contract StatementContract is AccessControl {
-    using StatementLibrary for StatementStorage;
+    using StatementLibrary for StatementLibrary.StatementStorage;
 
-    StatementStorage private statementStorage;
+    StatementLibrary.StatementStorage private statementStorage;
     bytes32 public constant AUTHORIZED_CALLER_ROLE = keccak256("AUTHORIZED_CALLER_ROLE");
 
     constructor(address _authorizedCaller) {
         _setupRole(AUTHORIZED_CALLER_ROLE, _authorizedCaller);
     }
 
-    function add(Definition memory definition, Price memory price)
+    function add(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
         returns (uint256)
@@ -26,19 +26,19 @@ contract StatementContract is AccessControl {
     function get(uint256 id)
         public
         view
-        returns (StatementData memory)
+        returns (StatementLibrary.StatementData memory)
     {
         return statementStorage.get(id);
     }
 
-    function update(uint256 id, Price memory price)
+    function update(uint256 id, StatementLibrary.Price memory price)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
     {
         statementStorage.update(id, price);
     }
 
-    function update(uint256 id, Definition memory definition)
+    function update(uint256 id, StatementLibrary.Definition memory definition)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
     {
