@@ -30,7 +30,7 @@ repos:
       files: '\.sol$'
       args:
         [
-          "--dir=truffle/contracts/",
+          "--dir=contracts/",
           "--config=.soliumrc.json",
           "--fix"
         ]

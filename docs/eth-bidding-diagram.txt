@@ -1,0 +1,37 @@
+title PM Eth endpoint
+
+bottomparticipants
+
+actor PM producer
+participant Proof Market
+entity Relayer
+participant Eth endpoint
+actor User
+
+note over Relayer: updates prices
+Relayer ->Proof Market: GET prices
+Relayer ->Eth endpoint: UPD prices
+
+==Workflow==
+
+User ->Eth endpoint: GET statements &\nprices
+User ->Eth endpoint: POST Bid
+Eth endpoint ->Eth endpoint: Store Bid &\nLock tokens
+PM producer ->Proof Market: POST Ask
+Proof Market ->Proof Market: Store Ask
+
+note over Relayer: tracks Eth orders
+Relayer ->Eth endpoint: GET new orders
+
+Relayer ->Proof Market: POST new orders \n(with eth address)
+Proof Market ->Proof Market: Create user for the eth address
+Proof Market ->Proof Market: Match orders
+PM producer ->Proof Market: POST proof
+Proof Market ->Proof Market: Verify &\nStore Proof
+
+note over Relayer: tracks PM proofs
+Relayer ->Proof Market: check upds &\nGET proof
+Relayer ->Eth endpoint: POST new proofs \nalong with final prices\nand producer's eth address
+Eth endpoint ->Eth endpoint: Verify &\nStore Proof
+Eth endpoint ->Eth endpoint: Complete order &\nMake payment&\nUnlock residual tokens
+User ->Eth endpoint: GET proof

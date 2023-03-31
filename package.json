@@ -1,0 +1,11 @@
+{
+  "name": "proof-market-endpoint",
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "hardhat": "^2.13.0"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@openzeppelin/contracts": "^4.8.2"
+  }
+}
