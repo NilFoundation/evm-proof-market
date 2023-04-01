@@ -43,7 +43,7 @@ library StatementLibrary {
         view
         returns (StatementData storage)
     {
-        require(id > 0 && id <= self.statementCounter, "Statement not found");
+        require(exists(self, id), "Statement not found");
         return self.statements[id];
     }
 
@@ -64,7 +64,29 @@ library StatementLibrary {
     function remove(StatementStorage storage self, uint256 id)
         internal
     {
-        require(id > 0 && id <= self.statementCounter, "Statement not found");
+        require(exists(self, id), "Statement not found");
         delete self.statements[id];
+    }
+
+    function exists(StatementStorage storage self, uint256 id)
+        internal
+        view
+        returns (bool) 
+    {
+        return id > 0 && id <= self.statementCounter;
+    }
+
+    function exists(StatementStorage storage self, Definition memory definition)
+        internal
+        view
+        returns (bool) 
+    {
+        for (uint256 i = 1; i <= self.statementCounter; i++) {
+            if (keccak256(self.statements[i].definition.verificationKey) == keccak256(definition.verificationKey) &&
+                keccak256(self.statements[i].definition.provingKey) == keccak256(definition.provingKey)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

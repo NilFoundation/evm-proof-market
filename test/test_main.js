@@ -47,22 +47,20 @@ describe("Proof market  tests", function () {
         });
 
         it("should update a statement", async function () {
-            await proofMarket.connect(relayer).addStatement(definition, price);
-
             const updatedDefinition = {
                 verificationKey: ethers.utils.formatBytes32String("Updated verification key"),
                 provingKey: ethers.utils.formatBytes32String("Updated proving key")
             }
             const updatedPrice = { price: 200 };
 
-            await expect(proofMarket.connect(relayer).updateStatementDefinition(2, updatedDefinition))
+            await expect(proofMarket.connect(relayer).updateStatementDefinition(1, updatedDefinition))
             .to.emit(proofMarket, "StatementDefinitionUpdated");
 
-            await expect(proofMarket.connect(relayer).updateStatementPrice(2, updatedPrice))
+            await expect(proofMarket.connect(relayer).updateStatementPrice(1, updatedPrice))
             .to.emit(proofMarket, "StatementPriceUpdated");
 
-            const statement = await proofMarket.getStatement(2);
-            expect(statement.id).to.equal(2);
+            const statement = await proofMarket.getStatement(1);
+            expect(statement.id).to.equal(1);
             expect(statement.definition.verificationKey).to.equal(updatedDefinition.verificationKey);
             expect(statement.definition.provingKey).to.equal(updatedDefinition.provingKey);
             expect(statement.price.price).to.equal(updatedPrice.price);
@@ -72,7 +70,7 @@ describe("Proof market  tests", function () {
     describe("Order tests", function () {
         it("should create a new order", async function () {
             const statementId = 1;
-            const input = ethers.utils.formatBytes32String("Example input");
+            const input = ethers.utils.formatBytes32String("Example input");            
             const price = ethers.utils.parseUnits("10", 18);
 
             await expect(proofMarket.connect(user).createOrder(statementId, input, price))
@@ -88,7 +86,7 @@ describe("Proof market  tests", function () {
         });
 
         it("should revert if the statement does not exist", async function () {
-            const statementId = 2;
+            const statementId = 123;
             const input = ethers.utils.formatBytes32String("Example input");
             const price = ethers.utils.parseUnits("10", 18);
 

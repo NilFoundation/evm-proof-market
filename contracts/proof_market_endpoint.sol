@@ -33,6 +33,20 @@ contract ProofMarketEndpoint is AccessControl {
     }
 
     //////////////////////////////
+    // Modifiers
+    //////////////////////////////
+
+    modifier statementMustExist(uint256 statementId) {
+        require(statementContract.exists(statementId), "Statement does not exist");
+        _;
+    }
+
+    modifier statementMustNotExist(StatementLibrary.Definition memory definition) {
+        require(!statementContract.exists(definition), "Statement already exists");
+        _;
+    }
+
+    //////////////////////////////
     // Access control
     //////////////////////////////
 
@@ -61,6 +75,7 @@ contract ProofMarketEndpoint is AccessControl {
 
     function createOrder(uint256 statementId, bytes memory input, uint256 price)
         public
+        statementMustExist(statementId)
         returns (uint256)
     {
         uint256 id = orderContract.create(statementId, input, price, msg.sender);
@@ -87,6 +102,7 @@ contract ProofMarketEndpoint is AccessControl {
     function addStatement(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
         public
         onlyRole(RELAYER_ROLE)
+        statementMustNotExist(definition)
     {
         uint256 id = statementContract.add(definition, price);
         emit StatementAdded(id, definition);

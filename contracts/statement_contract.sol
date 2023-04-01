@@ -53,4 +53,20 @@ contract StatementContract is AccessControl {
         // or just do not allow to submit new orders for this statement
         statementStorage.remove(id);
     }
+
+    function exists(uint256 id)
+        public
+        view
+        returns (bool)
+    {
+        return statementStorage.exists(id);
+    }
+
+    function exists(StatementLibrary.Definition memory definition)
+        public
+        view
+        returns (bool)
+    {
+        return statementStorage.exists(definition);
+    }
 }
