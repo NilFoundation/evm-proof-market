@@ -5,9 +5,10 @@ const { deployProofMarketFixture } = require("./fixtures.js");
 
 
 describe("Proof market  tests", function () {
-    let proofMarket, user, producer, relayer, definition, price;
-
+    let proofMarket, user, producer, relayer, definition, price, StatementContract;
+    
     before(async function () {
+        StatementContract = await ethers.getContractFactory("StatementContract");
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
@@ -112,6 +113,39 @@ describe("Proof market  tests", function () {
             const nonRelayer = proofMarket.connect(user);
 
             await expect(nonRelayer.closeOrder(orderId, proof, finalPrice, producer.address))
+            .to.be.revertedWith(/AccessControl/);
+        });
+    });
+    describe("Access control tests", function () {
+        it("should grant the relayer role to the relayer", async function () {
+            const hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            expect(hasRole).to.be.true;
+        });
+
+        it("should revoke the relayer role from the relayer", async function () {
+            await proofMarket.revokeRole(proofMarket.RELAYER_ROLE(), relayer.address);
+
+            const hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            expect(hasRole).to.be.false;
+            await proofMarket.grantRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            const hasRole2 = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            expect(hasRole2).to.be.true;
+        });
+
+        it("should revert if the caller is not the contract owner", async function () {
+            // connect to the contract as a non-owner
+            const nonOwner = proofMarket.connect(user);
+
+            await expect(nonOwner.grantRole(proofMarket.RELAYER_ROLE(), relayer.address))
+            .to.be.revertedWith(/AccessControl/);
+            await expect(nonOwner.revokeRole(proofMarket.RELAYER_ROLE(), relayer.address))
+            .to.be.revertedWith(/AccessControl/);
+        });
+
+        it("should revert if statement contract is called from outside the contract", async function () {
+            const statementContractAddress = await proofMarket.statementContract();
+            const statementContractInstance = StatementContract.attach(statementContractAddress);
+            await expect(statementContractInstance.connect(user).add(definition, price))
             .to.be.revertedWith(/AccessControl/);
         });
     });
