@@ -14,12 +14,12 @@ contract StatementContract is AccessControl {
         _setupRole(AUTHORIZED_CALLER_ROLE, _authorizedCaller);
     }
 
-    function add(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
+    function add(StatementLibrary.StatementInput memory statementInput)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
         returns (uint256)
     {
-        uint256 id = statementStorage.add(definition, price);
+        uint256 id = statementStorage.add(statementInput);
         return id;
     }
 

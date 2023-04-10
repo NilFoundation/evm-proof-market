@@ -17,7 +17,7 @@ contract ProofMarketEndpoint is AccessControl {
     bytes32 public constant OWNER_ROLE = AccessControl.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
-    event OrderCreated(uint256 indexed id, uint256 statementId, bytes input, uint256 price, address buyer);
+    event OrderCreated(uint256 indexed id, OrderLibrary.OrderInput orderInput, address buyer);
     event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes proof);
     // TODO: emit structs properly
     event StatementAdded(uint256 id, StatementLibrary.Definition definition);
@@ -73,13 +73,13 @@ contract ProofMarketEndpoint is AccessControl {
         return orderContract.get(orderId);
     }
 
-    function createOrder(uint256 statementId, bytes memory input, uint256 price)
+    function createOrder(OrderLibrary.OrderInput memory orderInput)
         public
-        statementMustExist(statementId)
+        statementMustExist(orderInput.statementId)
         returns (uint256)
     {
-        uint256 id = orderContract.create(statementId, input, price, msg.sender);
-        emit OrderCreated(id, statementId, input, price, msg.sender);
+        uint256 id = orderContract.create(orderInput, msg.sender);
+        emit OrderCreated(id, orderInput, msg.sender);
         return id;
     }
 
@@ -99,13 +99,13 @@ contract ProofMarketEndpoint is AccessControl {
         return statementContract.get(id);
     }
 
-    function addStatement(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
+    function addStatement(StatementLibrary.StatementInput memory statementInput)
         public
         onlyRole(RELAYER_ROLE)
-        statementMustNotExist(definition)
+        statementMustNotExist(statementInput.definition)
     {
-        uint256 id = statementContract.add(definition, price);
-        emit StatementAdded(id, definition);
+        uint256 id = statementContract.add(statementInput);
+        emit StatementAdded(id, statementInput.definition);
     }
 
     function updateStatementDefinition(uint256 id, StatementLibrary.Definition memory definition)

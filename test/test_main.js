@@ -5,7 +5,7 @@ const { deployProofMarketFixture } = require("./fixtures.js");
 
 
 describe("Proof market  tests", function () {
-    let proofMarket, user, producer, relayer, definition, price, StatementContract;
+    let proofMarket, user, producer, relayer, testStatement, StatementContract;
     
     before(async function () {
         StatementContract = await ethers.getContractFactory("StatementContract");
@@ -15,35 +15,42 @@ describe("Proof market  tests", function () {
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
         price = { price: 100 };
+        testStatement = {definition: definition, price: price, developer: producer.address};
     });
 
     describe("Statement tests", function () {
         it("should create a new statement", async function () {
-            const tx = await proofMarket.connect(relayer).addStatement(definition, price);
+            const tx = await proofMarket.connect(relayer).addStatement(testStatement);
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "StatementAdded");
 
             expect(event.args.id).to.equal(1);
-            expect(event.args.definition.verificationKey).to.equal(definition.verificationKey);
-            expect(event.args.definition.provingKey).to.equal(definition.provingKey);
+            expect(event.args.definition.verificationKey)
+            .to.equal(testStatement.definition.verificationKey);
+            expect(event.args.definition.provingKey)
+            .to.equal(testStatement.definition.provingKey);
 
             const statement = await proofMarket.getStatement(1);
+
             expect(statement.id).to.equal(1);
-            expect(statement.definition.verificationKey).to.equal(definition.verificationKey);
-            expect(statement.definition.provingKey).to.equal(definition.provingKey);
-            expect(statement.price.price).to.equal(price.price);
+            expect(statement.definition.verificationKey)
+            .to.equal(testStatement.definition.verificationKey);
+            expect(statement.definition.provingKey)
+            .to.equal(testStatement.definition.provingKey);
+            expect(statement.price.price)
+            .to.equal(testStatement.price.price);
         });
 
         it("should revert if the caller is not the contract owner", async function () {
             // connect to the contract as a non-owner
             const nonOwner = proofMarket.connect(user);
 
-            await expect(nonOwner.addStatement(definition, price))
+            await expect(nonOwner.addStatement(testStatement))
             .to.be.revertedWith(/AccessControl/);
         });
 
         it("should revert if the statement already exists", async function () {
-            await expect(proofMarket.connect(relayer).addStatement(definition, price))
+            await expect(proofMarket.connect(relayer).addStatement(testStatement))
             .to.be.revertedWith("Statement already exists");
         });
 
@@ -73,10 +80,19 @@ describe("Proof market  tests", function () {
             const statementId = 1;
             const input = ethers.utils.formatBytes32String("Example input");            
             const price = ethers.utils.parseUnits("10", 18);
+            const testOrder = {
+                statementId: statementId,
+                input: input,
+                price: price
+            };
 
-            await expect(proofMarket.connect(user).createOrder(statementId, input, price))
-            .to.emit(proofMarket, "OrderCreated")
-            .withArgs(1, statementId, input, price, user.address);
+            const tx = await proofMarket.connect(user).createOrder(testOrder);
+            const receipt = await tx.wait();
+            const event = receipt.events.find((e) => e.event === "OrderCreated");
+
+            expect(event.args.id).to.equal(1);
+            expect(event.args.orderInput).to.deep.equal(testOrder);
+            expect(event.args.buyer).to.equal(user.address);
 
             const order = await proofMarket.getOrder(1);
             expect(order.statementId).to.equal(statementId);
@@ -90,8 +106,13 @@ describe("Proof market  tests", function () {
             const statementId = 123;
             const input = ethers.utils.formatBytes32String("Example input");
             const price = ethers.utils.parseUnits("10", 18);
+            const testOrder = {
+                statementId: statementId,
+                input: input,
+                price: price
+            };
 
-            await expect(proofMarket.connect(user).createOrder(statementId, input, price))
+            await expect(proofMarket.connect(user).createOrder(testOrder))
             .to.be.revertedWith("Statement does not exist");
         });
 
@@ -116,6 +137,7 @@ describe("Proof market  tests", function () {
             .to.be.revertedWith(/AccessControl/);
         });
     });
+    
     describe("Access control tests", function () {
         it("should grant the relayer role to the relayer", async function () {
             const hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
@@ -145,7 +167,7 @@ describe("Proof market  tests", function () {
         it("should revert if statement contract is called from outside the contract", async function () {
             const statementContractAddress = await proofMarket.statementContract();
             const statementContractInstance = StatementContract.attach(statementContractAddress);
-            await expect(statementContractInstance.connect(user).add(definition, price))
+            await expect(statementContractInstance.connect(user).add(testStatement))
             .to.be.revertedWith(/AccessControl/);
         });
     });

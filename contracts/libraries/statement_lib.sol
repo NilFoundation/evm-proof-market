@@ -7,6 +7,13 @@ library StatementLibrary {
         uint256 id;
         Definition definition;
         Price price;
+        address developer;
+    }
+
+    struct StatementInput {
+        Definition definition;
+        Price price;
+        address developer;
     }
 
     struct StatementStorage {
@@ -23,7 +30,7 @@ library StatementLibrary {
         bytes provingKey;
     }
 
-    function add(StatementStorage storage self, Definition memory definition, Price memory price)
+    function add(StatementStorage storage self, StatementInput memory statementInput)
         internal
         returns (uint256)
     {
@@ -31,8 +38,9 @@ library StatementLibrary {
 
         self.statements[self.statementCounter] = StatementData({
             id: self.statementCounter,
-            definition: definition,
-            price: price
+            definition: statementInput.definition,
+            price: statementInput.price,
+            developer: statementInput.developer
         });
 
         return self.statementCounter;
