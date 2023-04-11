@@ -218,6 +218,7 @@ dist
 node_modules
 
 # testing
+deployed_addresses.json
 
 # production
 build
