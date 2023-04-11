@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { IProofMarketEndpoint } from "./interfaces/proof_market_endpoint.sol";
 import { StatementContract } from "./statement_contract.sol";
 import { StatementLibrary } from "./libraries/statement_lib.sol";
 import { OrderContract } from "./order_contract.sol";
@@ -9,21 +10,13 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
-contract ProofMarketEndpoint is AccessControl {
+contract ProofMarketEndpoint is AccessControl, IProofMarketEndpoint {
     IERC20 public token;
     StatementContract public statementContract;
     OrderContract public orderContract;
 
     bytes32 public constant OWNER_ROLE = AccessControl.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
-
-    event OrderCreated(uint256 indexed id, OrderLibrary.OrderInput orderInput, address buyer);
-    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes proof);
-    // TODO: emit structs properly
-    event StatementAdded(uint256 id, StatementLibrary.Definition definition);
-    event StatementDefinitionUpdated(uint256 id, StatementLibrary.Definition definition);
-    event StatementPriceUpdated(uint256 id, StatementLibrary.Price price);
-    event StatementRemoved(uint256 id);
 
     constructor(IERC20 _token) {
         _setupRole(OWNER_ROLE, msg.sender);

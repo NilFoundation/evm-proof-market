@@ -91,7 +91,9 @@ describe("Proof market  tests", function () {
             const event = receipt.events.find((e) => e.event === "OrderCreated");
 
             expect(event.args.id).to.equal(1);
-            expect(event.args.orderInput).to.deep.equal(testOrder);
+            expect(event.args.orderInput.statementId).to.equal(statementId);
+            expect(event.args.orderInput.input).to.equal(input);
+            expect(event.args.orderInput.price).to.equal(price);
             expect(event.args.buyer).to.equal(user.address);
 
             const order = await proofMarket.getOrder(1);
