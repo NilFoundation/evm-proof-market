@@ -11,6 +11,7 @@ library StatementLibrary {
     }
 
     struct StatementInput {
+        uint256 id;
         Definition definition;
         Price price;
         address developer;
@@ -18,7 +19,6 @@ library StatementLibrary {
 
     struct StatementStorage {
         mapping(uint256 => StatementData) statements;
-        uint256 statementCounter;
     }
 
     struct Price {
@@ -34,16 +34,16 @@ library StatementLibrary {
         internal
         returns (uint256)
     {
-        self.statementCounter++;
+        require(!exists(self, statementInput.id), "Statement ID already exists");
 
-        self.statements[self.statementCounter] = StatementData({
-            id: self.statementCounter,
+        self.statements[statementInput.id] = StatementData({
+            id: statementInput.id,
             definition: statementInput.definition,
             price: statementInput.price,
             developer: statementInput.developer
         });
 
-        return self.statementCounter;
+        return statementInput.id;
     }
 
     function get(StatementStorage storage self, uint256 id)
@@ -81,20 +81,6 @@ library StatementLibrary {
         view
         returns (bool) 
     {
-        return id > 0 && id <= self.statementCounter;
-    }
-
-    function exists(StatementStorage storage self, Definition memory definition)
-        internal
-        view
-        returns (bool) 
-    {
-        for (uint256 i = 1; i <= self.statementCounter; i++) {
-            if (keccak256(self.statements[i].definition.verificationKey) == keccak256(definition.verificationKey) &&
-                keccak256(self.statements[i].definition.provingKey) == keccak256(definition.provingKey)) {
-                return true;
-            }
-        }
-        return false;
+        return self.statements[id].id == id;
     }
 }

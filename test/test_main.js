@@ -15,7 +15,12 @@ describe("Proof market  tests", function () {
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
         price = { price: 100 };
-        testStatement = {definition: definition, price: price, developer: producer.address};
+        testStatement = {
+            id: 567,
+            definition: definition,
+            price: price,
+            developer: producer.address
+        };
     });
 
     describe("Statement tests", function () {
@@ -24,15 +29,15 @@ describe("Proof market  tests", function () {
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "StatementAdded");
 
-            expect(event.args.id).to.equal(1);
+            expect(event.args.id).to.equal(testStatement.id);
             expect(event.args.definition.verificationKey)
             .to.equal(testStatement.definition.verificationKey);
             expect(event.args.definition.provingKey)
             .to.equal(testStatement.definition.provingKey);
 
-            const statement = await proofMarket.getStatement(1);
+            const statement = await proofMarket.getStatement(testStatement.id);
 
-            expect(statement.id).to.equal(1);
+            expect(statement.id).to.equal(testStatement.id);
             expect(statement.definition.verificationKey)
             .to.equal(testStatement.definition.verificationKey);
             expect(statement.definition.provingKey)
@@ -51,24 +56,27 @@ describe("Proof market  tests", function () {
 
         it("should revert if the statement already exists", async function () {
             await expect(proofMarket.connect(relayer).addStatement(testStatement))
-            .to.be.revertedWith("Statement already exists");
+            .to.be.revertedWith("Statement ID already exists");
         });
 
         it("should update a statement", async function () {
+            const statementId = testStatement.id;
             const updatedDefinition = {
                 verificationKey: ethers.utils.formatBytes32String("Updated verification key"),
                 provingKey: ethers.utils.formatBytes32String("Updated proving key")
             }
             const updatedPrice = { price: 200 };
 
-            await expect(proofMarket.connect(relayer).updateStatementDefinition(1, updatedDefinition))
+            await expect(proofMarket.connect(relayer)
+            .updateStatementDefinition(statementId, updatedDefinition))
             .to.emit(proofMarket, "StatementDefinitionUpdated");
 
-            await expect(proofMarket.connect(relayer).updateStatementPrice(1, updatedPrice))
+            await expect(proofMarket.connect(relayer)
+            .updateStatementPrice(statementId, updatedPrice))
             .to.emit(proofMarket, "StatementPriceUpdated");
 
-            const statement = await proofMarket.getStatement(1);
-            expect(statement.id).to.equal(1);
+            const statement = await proofMarket.getStatement(statementId);
+            expect(statement.id).to.equal(statementId);
             expect(statement.definition.verificationKey).to.equal(updatedDefinition.verificationKey);
             expect(statement.definition.provingKey).to.equal(updatedDefinition.provingKey);
             expect(statement.price.price).to.equal(updatedPrice.price);
@@ -77,7 +85,7 @@ describe("Proof market  tests", function () {
 
     describe("Order tests", function () {
         it("should create a new order", async function () {
-            const statementId = 1;
+            const statementId = testStatement.id;
             const input = ethers.utils.formatBytes32String("Example input");            
             const price = ethers.utils.parseUnits("10", 18);
             const testOrder = {

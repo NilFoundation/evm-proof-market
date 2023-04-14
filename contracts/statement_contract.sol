@@ -61,12 +61,4 @@ contract StatementContract is AccessControl {
     {
         return statementStorage.exists(id);
     }
-
-    function exists(StatementLibrary.Definition memory definition)
-        public
-        view
-        returns (bool)
-    {
-        return statementStorage.exists(definition);
-    }
 }

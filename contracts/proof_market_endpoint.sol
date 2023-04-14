@@ -34,11 +34,6 @@ contract ProofMarketEndpoint is AccessControl, IProofMarketEndpoint {
         _;
     }
 
-    modifier statementMustNotExist(StatementLibrary.Definition memory definition) {
-        require(!statementContract.exists(definition), "Statement already exists");
-        _;
-    }
-
     //////////////////////////////
     // Access control
     //////////////////////////////
@@ -95,7 +90,6 @@ contract ProofMarketEndpoint is AccessControl, IProofMarketEndpoint {
     function addStatement(StatementLibrary.StatementInput memory statementInput)
         public
         onlyRole(RELAYER_ROLE)
-        statementMustNotExist(statementInput.definition)
     {
         uint256 id = statementContract.add(statementInput);
         emit StatementAdded(id, statementInput.definition);
