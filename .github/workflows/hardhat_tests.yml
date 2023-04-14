@@ -12,13 +12,8 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: 18
-
-    - name: Install dependencies
-      run: npm ci
+    - name: Set up Node.js and install dependencies
+      run: ./scripts/setup.sh
 
     - name: Run Hardhat tests
       run: npx hardhat test
