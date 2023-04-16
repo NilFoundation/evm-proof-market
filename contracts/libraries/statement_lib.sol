@@ -7,11 +7,18 @@ library StatementLibrary {
         uint256 id;
         Definition definition;
         Price price;
+        address developer;
+    }
+
+    struct StatementInput {
+        uint256 id;
+        Definition definition;
+        Price price;
+        address developer;
     }
 
     struct StatementStorage {
         mapping(uint256 => StatementData) statements;
-        uint256 statementCounter;
     }
 
     struct Price {
@@ -23,19 +30,20 @@ library StatementLibrary {
         bytes provingKey;
     }
 
-    function add(StatementStorage storage self, Definition memory definition, Price memory price)
+    function add(StatementStorage storage self, StatementInput memory statementInput)
         internal
         returns (uint256)
     {
-        self.statementCounter++;
+        require(!exists(self, statementInput.id), "Statement ID already exists");
 
-        self.statements[self.statementCounter] = StatementData({
-            id: self.statementCounter,
-            definition: definition,
-            price: price
+        self.statements[statementInput.id] = StatementData({
+            id: statementInput.id,
+            definition: statementInput.definition,
+            price: statementInput.price,
+            developer: statementInput.developer
         });
 
-        return self.statementCounter;
+        return statementInput.id;
     }
 
     function get(StatementStorage storage self, uint256 id)
@@ -43,7 +51,7 @@ library StatementLibrary {
         view
         returns (StatementData storage)
     {
-        require(id > 0 && id <= self.statementCounter, "Statement not found");
+        require(exists(self, id), "Statement not found");
         return self.statements[id];
     }
 
@@ -64,7 +72,15 @@ library StatementLibrary {
     function remove(StatementStorage storage self, uint256 id)
         internal
     {
-        require(id > 0 && id <= self.statementCounter, "Statement not found");
+        require(exists(self, id), "Statement not found");
         delete self.statements[id];
+    }
+
+    function exists(StatementStorage storage self, uint256 id)
+        internal
+        view
+        returns (bool) 
+    {
+        return self.statements[id].id == id;
     }
 }

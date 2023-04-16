@@ -16,6 +16,12 @@ library OrderLibrary {
         bytes proof;
     }
 
+    struct OrderInput {
+        uint256 statementId;
+        bytes input;
+        uint256 price;
+    }
+
     struct OrderStorage {
         mapping(uint256 => Order) orders;
         uint256 orderCounter;
@@ -23,18 +29,16 @@ library OrderLibrary {
 
     function create(
         OrderStorage storage self,
-        uint256 statementId,
-        bytes memory input,
-        uint256 price,
+        OrderInput memory inputData,
         address buyer
     ) internal returns (uint256) {
         self.orderCounter++;
 
         self.orders[self.orderCounter] = Order({
             id: self.orderCounter,
-            statementId: statementId,
-            input: input,
-            price: price,
+            statementId: inputData.statementId,
+            input: inputData.input,
+            price: inputData.price,
             buyer: buyer,
             status: OrderStatus.OPEN,
             producer: address(0),

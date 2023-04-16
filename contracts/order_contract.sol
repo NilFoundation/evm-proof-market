@@ -19,15 +19,14 @@ contract OrderContract is AccessControl {
         token = IERC20(_token);
     }
 
-    function create(uint256 statementId, bytes memory input, uint256 price, address buyer)
+    function create(OrderLibrary.OrderInput memory orderInput, address buyer)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
         returns (uint256)
     {
-        // TODO: check if statement exists
         // TODO: to whom it would be better to send tokens?
-        require(token.transferFrom(buyer, address(this), price), "Transfer failed");
-        uint256 id = orderStorage.create(statementId, input, price, buyer);
+        require(token.transferFrom(buyer, address(this), orderInput.price), "Transfer failed");
+        uint256 id = orderStorage.create(orderInput, buyer);
         return id;
     }
 
@@ -47,7 +46,6 @@ contract OrderContract is AccessControl {
         require(order.status == OrderLibrary.OrderStatus.OPEN, "Order is not open");
         require(finalPrice <= order.price, "Invalid final price");
 
-        // TODO: do both transfers in one transaction
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");

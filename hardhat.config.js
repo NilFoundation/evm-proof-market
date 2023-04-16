@@ -1,6 +1,7 @@
 
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-ethers");
+require("hardhat-gas-reporter");
 
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -24,5 +25,10 @@ module.exports = {
     hardhat: {
       blockGasLimit: 100_000_000,
     },
-  }
+  },
+  gasReporter: {
+    currency: "USD",
+    gasPrice: 5,
+    enabled: false
+  },
 };

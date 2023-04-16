@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import { IProofMarketEndpoint } from "./interfaces/proof_market_endpoint.sol";
 import { StatementContract } from "./statement_contract.sol";
 import { StatementLibrary } from "./libraries/statement_lib.sol";
 import { OrderContract } from "./order_contract.sol";
@@ -9,7 +10,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
-contract ProofMarketEndpoint is AccessControl {
+contract ProofMarketEndpoint is AccessControl, IProofMarketEndpoint {
     IERC20 public token;
     StatementContract public statementContract;
     OrderContract public orderContract;
@@ -17,19 +18,20 @@ contract ProofMarketEndpoint is AccessControl {
     bytes32 public constant OWNER_ROLE = AccessControl.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
-    event OrderCreated(uint256 indexed id, uint256 statementId, bytes input, uint256 price, address buyer);
-    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes proof);
-    // TODO: emit structs properly
-    event StatementAdded(uint256 id, StatementLibrary.Definition definition);
-    event StatementDefinitionUpdated(uint256 id, StatementLibrary.Definition definition);
-    event StatementPriceUpdated(uint256 id, StatementLibrary.Price price);
-    event StatementRemoved(uint256 id);
-
     constructor(IERC20 _token) {
         _setupRole(OWNER_ROLE, msg.sender);
         token = _token;
         statementContract = new StatementContract(address(this));
         orderContract = new OrderContract(address(this), address(token));
+    }
+
+    //////////////////////////////
+    // Modifiers
+    //////////////////////////////
+
+    modifier statementMustExist(uint256 statementId) {
+        require(statementContract.exists(statementId), "Statement does not exist");
+        _;
     }
 
     //////////////////////////////
@@ -59,12 +61,13 @@ contract ProofMarketEndpoint is AccessControl {
         return orderContract.get(orderId);
     }
 
-    function createOrder(uint256 statementId, bytes memory input, uint256 price)
+    function createOrder(OrderLibrary.OrderInput memory orderInput)
         public
+        statementMustExist(orderInput.statementId)
         returns (uint256)
     {
-        uint256 id = orderContract.create(statementId, input, price, msg.sender);
-        emit OrderCreated(id, statementId, input, price, msg.sender);
+        uint256 id = orderContract.create(orderInput, msg.sender);
+        emit OrderCreated(id, orderInput, msg.sender);
         return id;
     }
 
@@ -84,12 +87,12 @@ contract ProofMarketEndpoint is AccessControl {
         return statementContract.get(id);
     }
 
-    function addStatement(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
+    function addStatement(StatementLibrary.StatementInput memory statementInput)
         public
         onlyRole(RELAYER_ROLE)
     {
-        uint256 id = statementContract.add(definition, price);
-        emit StatementAdded(id, definition);
+        uint256 id = statementContract.add(statementInput);
+        emit StatementAdded(id, statementInput.definition);
     }
 
     function updateStatementDefinition(uint256 id, StatementLibrary.Definition memory definition)

@@ -1,0 +1,19 @@
+name: Hardhat Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  hardhat-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js and install dependencies
+      run: ./scripts/setup.sh
+
+    - name: Run Hardhat tests
+      run: npx hardhat test

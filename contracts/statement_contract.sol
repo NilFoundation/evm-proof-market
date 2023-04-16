@@ -14,12 +14,12 @@ contract StatementContract is AccessControl {
         _setupRole(AUTHORIZED_CALLER_ROLE, _authorizedCaller);
     }
 
-    function add(StatementLibrary.Definition memory definition, StatementLibrary.Price memory price)
+    function add(StatementLibrary.StatementInput memory statementInput)
         public
         onlyRole(AUTHORIZED_CALLER_ROLE)
         returns (uint256)
     {
-        uint256 id = statementStorage.add(definition, price);
+        uint256 id = statementStorage.add(statementInput);
         return id;
     }
 
@@ -52,5 +52,13 @@ contract StatementContract is AccessControl {
         // TODO: delete all orders related to this statement
         // or just do not allow to submit new orders for this statement
         statementStorage.remove(id);
+    }
+
+    function exists(uint256 id)
+        public
+        view
+        returns (bool)
+    {
+        return statementStorage.exists(id);
     }
 }

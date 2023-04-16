@@ -20,7 +20,30 @@ npx hardhat test #Execute tests
 ```
 
 ## Deploy
-TODO
+```
+npx hardhat run scripts/deploy.js --network <network>
+```
+
+To deploy to a local network, you can use the following command to start a local node:
+```
+npx hardhat node
+```
+And then deploy to the local network in a separate terminal:
+```
+npx hardhat run scripts/deploy.js --network localhost
+```
 
 ## Usage
 TODO
+
+## Events
+
+To listen to events emitted by the smart contracts, you can use the following command:
+```
+npx hardhat run --network <network> scripts/trackEvents.js
+```
+
+To generate some events, you can use the following command:
+```
+npx hardhat run --network <network> scripts/interact.js
+```
