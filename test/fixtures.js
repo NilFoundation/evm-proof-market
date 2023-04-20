@@ -19,7 +19,7 @@ async function deployProofMarketFixture() {
 	const initialBalance = ethers.utils.parseUnits("1000", 18);
 	await token.mint(user.address, initialBalance);
 	// Approve the contract to spend the user's tokens
-	await token.connect(user).approve(proofMarket.orderContract(), initialBalance);
+	await token.connect(user).approve(proofMarket.address, initialBalance);
 
     return { proofMarket, token, owner, user, producer, relayer };
 }

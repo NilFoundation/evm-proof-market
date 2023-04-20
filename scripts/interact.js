@@ -27,7 +27,7 @@ async function main() {
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
         const price = { price: 100 };
-        const testStatement = { definition: definition, price: price, developer: producer.address };
+        const testStatement = {id: 1, definition: definition, price: price, developer: producer.address };
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementAdded");

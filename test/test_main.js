@@ -5,10 +5,9 @@ const { deployProofMarketFixture } = require("./fixtures.js");
 
 
 describe("Proof market  tests", function () {
-    let proofMarket, user, producer, relayer, testStatement, StatementContract;
+    let proofMarket, user, producer, relayer, testStatement;
     
     before(async function () {
-        StatementContract = await ethers.getContractFactory("StatementContract");
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
@@ -174,11 +173,11 @@ describe("Proof market  tests", function () {
             .to.be.revertedWith(/AccessControl/);
         });
 
-        it("should revert if statement contract is called from outside the contract", async function () {
-            const statementContractAddress = await proofMarket.statementContract();
-            const statementContractInstance = StatementContract.attach(statementContractAddress);
-            await expect(statementContractInstance.connect(user).add(testStatement))
-            .to.be.revertedWith(/AccessControl/);
-        });
+        // it("should revert if statement contract is called from outside the contract", async function () {
+        //     const statementContractAddress = await proofMarket.statementContract();
+        //     const statementContractInstance = StatementContract.attach(statementContractAddress);
+        //     await expect(statementContractInstance.connect(user).add(testStatement))
+        //     .to.be.revertedWith(/AccessControl/);
+        // });
     });
 });
