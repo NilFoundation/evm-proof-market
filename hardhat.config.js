@@ -3,6 +3,7 @@ require("@nomicfoundation/hardhat-toolbox");
 require('@openzeppelin/hardhat-upgrades');
 require("@nomiclabs/hardhat-ethers");
 require("hardhat-gas-reporter");
+require('hardhat-storage-layout');
 
 
 /** @type import('hardhat/config').HardhatUserConfig */

@@ -19,6 +19,7 @@ library StatementLibrary {
 
     struct StatementStorage {
         mapping(uint256 => StatementData) statements;
+        uint256[31] __gap;
     }
 
     struct Price {

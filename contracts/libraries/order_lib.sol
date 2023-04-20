@@ -25,6 +25,7 @@ library OrderLibrary {
     struct OrderStorage {
         mapping(uint256 => Order) orders;
         uint256 orderCounter;
+        uint256[30] __gap;
     }
 
     function create(

@@ -11,18 +11,25 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 
 
 contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofMarketEndpoint {
-    IERC20 public token;
 
-    // OrderContract storage and functions
     using OrderLibrary for OrderLibrary.OrderStorage;
-    OrderLibrary.OrderStorage private orderStorage;
-
-    // StatementContract storage and functions
     using StatementLibrary for StatementLibrary.StatementStorage;
-    StatementLibrary.StatementStorage private statementStorage;
 
     bytes32 public constant OWNER_ROLE = AccessControlUpgradeable.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+
+    //////////////////////////////
+    // Storage
+    //////////////////////////////
+
+    IERC20 public token;
+    OrderLibrary.OrderStorage private orderStorage;
+    StatementLibrary.StatementStorage private statementStorage;
+    // Add more storage slots here
+
+    //////////////////////////////
+    // Constructor
+    //////////////////////////////
 
     function initialize(IERC20 _token) public initializer {
         __AccessControl_init();
