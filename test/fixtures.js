@@ -1,5 +1,5 @@
 
-const { ethers } = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 
 async function deployProofMarketFixture() {
     const ProofMarket = await ethers.getContractFactory("ProofMarketEndpoint");
@@ -11,7 +11,7 @@ async function deployProofMarketFixture() {
 	const token = await ERC20.deploy();
 	await token.deployed();
 	// Deploy the proof market contract
-    const proofMarket = await ProofMarket.deploy(token.address);
+	const proofMarket = await upgrades.deployProxy(ProofMarket, [token.address]);
     await proofMarket.deployed();
 	// Set the relayer role
 	await proofMarket.grantRole(proofMarket.RELAYER_ROLE(), relayer.address);

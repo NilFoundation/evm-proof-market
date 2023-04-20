@@ -6,10 +6,11 @@ import { StatementLibrary } from "./libraries/statement_lib.sol";
 import { OrderLibrary } from "./libraries/order_lib.sol";
 import { Tools } from "./libraries/tools.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 
 
-contract ProofMarketEndpoint is AccessControl, IProofMarketEndpoint {
+contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofMarketEndpoint {
     IERC20 public token;
 
     // OrderContract storage and functions
@@ -20,10 +21,11 @@ contract ProofMarketEndpoint is AccessControl, IProofMarketEndpoint {
     using StatementLibrary for StatementLibrary.StatementStorage;
     StatementLibrary.StatementStorage private statementStorage;
 
-    bytes32 public constant OWNER_ROLE = AccessControl.DEFAULT_ADMIN_ROLE;
+    bytes32 public constant OWNER_ROLE = AccessControlUpgradeable.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
-    constructor(IERC20 _token) {
+    function initialize(IERC20 _token) public initializer {
+        __AccessControl_init();
         _setupRole(OWNER_ROLE, msg.sender);
         token = _token;
     }
