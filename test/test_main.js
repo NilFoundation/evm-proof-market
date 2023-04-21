@@ -180,4 +180,32 @@ describe("Proof market  tests", function () {
         //     .to.be.revertedWith(/AccessControl/);
         // });
     });
+
+    describe("Upgradeability tests", function () {
+        it("should upgrade the contract and preserve the state", async function () {
+            // Upgrade the contract
+            const ProofMarketV2 = await ethers.getContractFactory("ProofMarketEndpointV2");
+            const proofMarketV2 = await upgrades.upgradeProxy(proofMarket.address, ProofMarketV2);
+
+            // Check that the new contract has the new function
+            const newApi = await proofMarketV2.newApi();
+            expect(newApi).to.equal('new api');
+
+            const statementId = testStatement.id;
+            const input = ethers.utils.formatBytes32String("Example input");            
+            const price = ethers.utils.parseUnits("10", 18);
+            const orderId = 1;
+
+            // Check that the state is preserved
+            const order = await proofMarket.getOrder(orderId);
+            expect(order.statementId).to.equal(statementId);
+            expect(order.input).to.equal(input);
+            expect(order.price).to.equal(price);
+            expect(order.buyer).to.equal(user.address);
+
+            // Check that the new field is set to the default value
+            const orderV2 = await proofMarketV2.getOrder(orderId);
+            expect(orderV2.newInt).to.equal(0);
+        });
+    });
 });
