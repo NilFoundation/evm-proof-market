@@ -89,16 +89,14 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         onlyRole(RELAYER_ROLE)
     {
         OrderLibrary.Order memory order = getOrder(orderId);
-        require(order.status == OrderLibrary.OrderStatus.OPEN, "Order is not open");
-        require(finalPrice <= order.price, "Invalid final price");
+        orderStorage.close(orderId, producer, finalPrice, proof);
+
+        require(Tools.verifyProof(orderId, proof), "Proof is not valid");
 
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
-
-        require(Tools.verifyProof(orderId, proof), "Proof is not valid");
-
-        orderStorage.update(orderId, producer, proof);
+        
         emit OrderClosed(orderId, producer, finalPrice, proof);
     }
 

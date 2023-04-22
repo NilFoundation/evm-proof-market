@@ -172,13 +172,6 @@ describe("Proof market  tests", function () {
             await expect(nonOwner.revokeRole(proofMarket.RELAYER_ROLE(), relayer.address))
             .to.be.revertedWith(/AccessControl/);
         });
-
-        // it("should revert if statement contract is called from outside the contract", async function () {
-        //     const statementContractAddress = await proofMarket.statementContract();
-        //     const statementContractInstance = StatementContract.attach(statementContractAddress);
-        //     await expect(statementContractInstance.connect(user).add(testStatement))
-        //     .to.be.revertedWith(/AccessControl/);
-        // });
     });
 
     describe("Upgradeability tests", function () {
