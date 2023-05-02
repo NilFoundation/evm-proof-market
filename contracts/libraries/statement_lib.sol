@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 library StatementLibrary {
 
+    enum StatementStatus {ACTIVE, INACTIVE}
+
     struct StatementData {
         uint256 id;
+        StatementStatus status;
         Definition definition;
         Price price;
         address developer;
@@ -39,6 +42,7 @@ library StatementLibrary {
 
         self.statements[statementInput.id] = StatementData({
             id: statementInput.id,
+            status: StatementStatus.ACTIVE,
             definition: statementInput.definition,
             price: statementInput.price,
             developer: statementInput.developer
@@ -74,7 +78,7 @@ library StatementLibrary {
         internal
     {
         require(exists(self, id), "Statement not found");
-        delete self.statements[id];
+        self.statements[id].status = StatementStatus.INACTIVE;
     }
 
     function exists(StatementStorage storage self, uint256 id)
@@ -83,5 +87,13 @@ library StatementLibrary {
         returns (bool) 
     {
         return self.statements[id].id == id;
+    }
+
+    function isActive(StatementStorage storage self, uint256 id)
+        internal
+        view
+        returns (bool) 
+    {
+        return exists(self, id) && self.statements[id].status == StatementStatus.ACTIVE;
     }
 }

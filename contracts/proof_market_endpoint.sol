@@ -41,8 +41,8 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     // Modifiers
     //////////////////////////////
 
-    modifier statementMustExist(uint256 statementId) {
-        require(statementStorage.exists(statementId), "Statement does not exist");
+    modifier statementMustBeActive(uint256 statementId) {
+        require(statementStorage.isActive(statementId), "Statement does not exist or is inactive");
         _;
     }
 
@@ -75,7 +75,7 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
 
     function createOrder(OrderLibrary.OrderInput memory orderInput)
         public
-        statementMustExist(orderInput.statementId)
+        statementMustBeActive(orderInput.statementId)
         returns (uint256)
     {
         uint256 id = orderStorage.create(orderInput, msg.sender);
