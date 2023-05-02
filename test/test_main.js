@@ -5,10 +5,9 @@ const { deployProofMarketFixture } = require("./fixtures.js");
 
 
 describe("Proof market  tests", function () {
-    let proofMarket, user, producer, relayer, testStatement, StatementContract;
+    let proofMarket, user, producer, relayer, testStatement, testOrder;
     
     before(async function () {
-        StatementContract = await ethers.getContractFactory("StatementContract");
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
@@ -20,6 +19,12 @@ describe("Proof market  tests", function () {
             definition: definition,
             price: price,
             developer: producer.address
+        };
+
+        testOrder = {
+            statementId: testStatement.id,
+            input: ethers.utils.formatBytes32String("Example input"),
+            price: ethers.utils.parseUnits("10", 18)
         };
     });
 
@@ -81,49 +86,52 @@ describe("Proof market  tests", function () {
             expect(statement.definition.provingKey).to.equal(updatedDefinition.provingKey);
             expect(statement.price.price).to.equal(updatedPrice.price);
         });
+
+        it("should remove a statement", async function () {
+            let newStatement = Object.assign({}, testStatement);
+            newStatement.id += 2;
+
+            await proofMarket.connect(relayer).addStatement(newStatement);
+
+            await expect(proofMarket.connect(owner).removeStatement(newStatement.id))
+            .to.emit(proofMarket, "StatementRemoved");
+
+            // get the statement and check status
+            const statement = await proofMarket.getStatement(newStatement.id);
+            expect(statement.status).to.equal(1); // StatementStatus.INACTIVE
+
+
+        });
+
     });
 
     describe("Order tests", function () {
         it("should create a new order", async function () {
             const statementId = testStatement.id;
-            const input = ethers.utils.formatBytes32String("Example input");            
-            const price = ethers.utils.parseUnits("10", 18);
-            const testOrder = {
-                statementId: statementId,
-                input: input,
-                price: price
-            };
-
             const tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "OrderCreated");
 
             expect(event.args.id).to.equal(1);
             expect(event.args.orderInput.statementId).to.equal(statementId);
-            expect(event.args.orderInput.input).to.equal(input);
-            expect(event.args.orderInput.price).to.equal(price);
+            expect(event.args.orderInput.input).to.equal(testOrder.input);
+            expect(event.args.orderInput.price).to.equal(testOrder.price);
             expect(event.args.buyer).to.equal(user.address);
 
             const order = await proofMarket.getOrder(1);
             expect(order.statementId).to.equal(statementId);
-            expect(order.input).to.equal(input);
-            expect(order.price).to.equal(price);
+            expect(order.input).to.equal(testOrder.input);
+            expect(order.price).to.equal(testOrder.price);
             expect(order.buyer).to.equal(user.address);
             expect(order.status).to.equal(0); // OrderStatus.OPEN
         });
 
         it("should revert if the statement does not exist", async function () {
-            const statementId = 123;
-            const input = ethers.utils.formatBytes32String("Example input");
-            const price = ethers.utils.parseUnits("10", 18);
-            const testOrder = {
-                statementId: statementId,
-                input: input,
-                price: price
-            };
+            let newOrder = Object.assign({}, testOrder);
+            newOrder.statementId += 1;
 
-            await expect(proofMarket.connect(user).createOrder(testOrder))
-            .to.be.revertedWith("Statement does not exist");
+            await expect(proofMarket.connect(user).createOrder(newOrder))
+            .to.be.revertedWith("Statement does not exist or is inactive");
         });
 
         it("should close an order", async function () {
@@ -173,12 +181,29 @@ describe("Proof market  tests", function () {
             await expect(nonOwner.revokeRole(proofMarket.RELAYER_ROLE(), relayer.address))
             .to.be.revertedWith(/AccessControl/);
         });
+    });
 
-        it("should revert if statement contract is called from outside the contract", async function () {
-            const statementContractAddress = await proofMarket.statementContract();
-            const statementContractInstance = StatementContract.attach(statementContractAddress);
-            await expect(statementContractInstance.connect(user).add(testStatement))
-            .to.be.revertedWith(/AccessControl/);
+    describe("Upgradeability tests", function () {
+        it("should upgrade the contract and preserve the state", async function () {
+            // Upgrade the contract
+            const ProofMarketV2 = await ethers.getContractFactory("ProofMarketEndpointV2");
+            const proofMarketV2 = await upgrades.upgradeProxy(proofMarket.address, ProofMarketV2);
+
+            // Check that the new contract has the new function
+            const newApi = await proofMarketV2.newApi();
+            expect(newApi).to.equal('new api');
+
+            const statementId = testStatement.id;
+            const input = ethers.utils.formatBytes32String("Example input");            
+            const price = ethers.utils.parseUnits("10", 18);
+            const orderId = 1;
+
+            // Check that the state is preserved
+            const order = await proofMarket.getOrder(orderId);
+            expect(order.statementId).to.equal(statementId);
+            expect(order.input).to.equal(input);
+            expect(order.price).to.equal(price);
+            expect(order.buyer).to.equal(user.address);
         });
     });
 });

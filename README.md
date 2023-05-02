@@ -33,6 +33,16 @@ And then deploy to the local network in a separate terminal:
 npx hardhat run scripts/deploy.js --network localhost
 ```
 
+## Update
+Check storage layout of the contracts:
+```
+npx hardhat check
+```
+These requirements must be met:
+- Existing layout of storage slots must be preserved (except for the `gap` arrays)
+- Any new storage slots must be added `at the end` of the contract
+- Length of the gap arrays must be descreased so the storage layout is preserved
+
 ## Usage
 TODO
 
