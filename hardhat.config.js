@@ -25,12 +25,10 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      blockGasLimit: 100_000_000,
+      blockGasLimit: 100_000_000
     },
   },
   gasReporter: {
-    currency: "USD",
-    gasPrice: 5,
-    enabled: false
+    enabled: true,
   },
 };

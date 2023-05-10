@@ -61,7 +61,6 @@ library OrderLibrary {
         uint256 finalPrice,
         bytes memory proof
     ) internal {
-        require(id > 0 && id <= self.orderCounter, "Order not found");
         require(self.orders[id].status == OrderLibrary.OrderStatus.OPEN, "Order is not open");
         require(finalPrice <= self.orders[id].price, "Invalid final price");
 
