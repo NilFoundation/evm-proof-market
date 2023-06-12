@@ -21,13 +21,14 @@ async function main() {
     console.log("User balance:", ethers.utils.formatUnits(balance, 18));
 
     // add a statement
+    const statementId = Math.floor(Math.random() * 1000000);
     try {
         const definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
         const price = { price: 100 };
-        const testStatement = {id: 1, definition: definition, price: price, developer: producer.address };
+        const testStatement = {id: statementId, definition: definition, price: price, developer: producer.address };
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementAdded");
@@ -42,7 +43,6 @@ async function main() {
 
     // add an order
     try {
-        const statementId = 1;
         const input = ethers.utils.formatBytes32String("Example input");            
         const price = ethers.utils.parseUnits("10", 18);
         const testOrder = {
