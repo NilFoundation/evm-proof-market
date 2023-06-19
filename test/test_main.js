@@ -20,10 +20,11 @@ describe("Proof market  tests", function () {
             price: price,
             developer: producer.address
         };
+        const stringInBytes = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("a".repeat(2**10)));
 
         testOrder = {
             statementId: testStatement.id,
-            input: ethers.utils.formatBytes32String("Example input"),
+            input: stringInBytes,
             price: ethers.utils.parseUnits("10", 18)
         };
     });
@@ -54,9 +55,10 @@ describe("Proof market  tests", function () {
         it("should revert if the caller is not the contract owner", async function () {
             // connect to the contract as a non-owner
             const nonOwner = proofMarket.connect(user);
-
+            testStatement.id += 1;
             await expect(nonOwner.addStatement(testStatement))
             .to.be.revertedWith(/AccessControl/);
+            testStatement.id -= 1;
         });
 
         it("should revert if the statement already exists", async function () {
@@ -89,20 +91,16 @@ describe("Proof market  tests", function () {
 
         it("should remove a statement", async function () {
             let newStatement = Object.assign({}, testStatement);
-            newStatement.id += 2;
+            newStatement.id += 1;
 
             await proofMarket.connect(relayer).addStatement(newStatement);
 
             await expect(proofMarket.connect(owner).removeStatement(newStatement.id))
             .to.emit(proofMarket, "StatementRemoved");
 
-            // get the statement and check status
             const statement = await proofMarket.getStatement(newStatement.id);
             expect(statement.status).to.equal(1); // StatementStatus.INACTIVE
-
-
         });
-
     });
 
     describe("Order tests", function () {
@@ -111,13 +109,13 @@ describe("Proof market  tests", function () {
             const tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "OrderCreated");
-
             expect(event.args.id).to.equal(1);
             expect(event.args.orderInput.statementId).to.equal(statementId);
             expect(event.args.orderInput.input).to.equal(testOrder.input);
             expect(event.args.orderInput.price).to.equal(testOrder.price);
             expect(event.args.buyer).to.equal(user.address);
-
+            
+            
             const order = await proofMarket.getOrder(1);
             expect(order.statementId).to.equal(statementId);
             expect(order.input).to.equal(testOrder.input);
@@ -129,19 +127,33 @@ describe("Proof market  tests", function () {
         it("should revert if the statement does not exist", async function () {
             let newOrder = Object.assign({}, testOrder);
             newOrder.statementId += 1;
+            // order is inactive
+            await expect(proofMarket.connect(user).createOrder(newOrder))
+            .to.be.revertedWith("Statement does not exist or is inactive");
 
+            newOrder.statementId += 1;
+            // order does not exist
             await expect(proofMarket.connect(user).createOrder(newOrder))
             .to.be.revertedWith("Statement does not exist or is inactive");
         });
 
         it("should close an order", async function () {
             const orderId = 1;
-            const proof = ethers.utils.formatBytes32String("Example proof");
+            const proof = ethers.utils.hexlify(ethers.utils.toUtf8Bytes("a".repeat(2**0)));
             const finalPrice = ethers.utils.parseUnits("9", 18);
 
             await expect(proofMarket.connect(relayer).closeOrder(orderId, proof, finalPrice, producer.address))
             .to.emit(proofMarket, "OrderClosed")
             .withArgs(orderId, producer.address, finalPrice, proof);
+        });
+
+        it("should revert if the order does not exist", async function () {
+            const orderId = 12345;
+            const proof = ethers.utils.formatBytes32String("Example proof");
+            const finalPrice = ethers.utils.parseUnits("9", 18);
+
+            await expect(proofMarket.connect(relayer).closeOrder(orderId, proof, finalPrice, producer.address))
+            .to.be.revertedWith("Order not found");
         });
 
         it("should revert if the caller is not the relayer", async function () {
@@ -153,6 +165,13 @@ describe("Proof market  tests", function () {
 
             await expect(nonRelayer.closeOrder(orderId, proof, finalPrice, producer.address))
             .to.be.revertedWith(/AccessControl/);
+        });
+
+        it("should revert if price is too low", async function () {
+            let invalidOrderInput = Object.assign({}, testOrder);
+            invalidOrderInput.price = ethers.utils.parseUnits("1", 18);
+            await expect(proofMarket.connect(user).createOrder(invalidOrderInput))
+            .to.be.revertedWith("Price is too low");
         });
     });
     
@@ -193,16 +212,13 @@ describe("Proof market  tests", function () {
             const newApi = await proofMarketV2.newApi();
             expect(newApi).to.equal('new api');
 
-            const statementId = testStatement.id;
-            const input = ethers.utils.formatBytes32String("Example input");            
-            const price = ethers.utils.parseUnits("10", 18);
-            const orderId = 1;
 
             // Check that the state is preserved
+            const orderId = 1;
             const order = await proofMarket.getOrder(orderId);
-            expect(order.statementId).to.equal(statementId);
-            expect(order.input).to.equal(input);
-            expect(order.price).to.equal(price);
+            expect(order.statementId).to.equal(testOrder.statementId);
+            expect(order.input).to.equal(testOrder.input);
+            expect(order.price).to.equal(testOrder.price);
             expect(order.buyer).to.equal(user.address);
         });
     });

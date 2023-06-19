@@ -15,8 +15,13 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     using OrderLibrary for OrderLibrary.OrderStorage;
     using StatementLibrary for StatementLibrary.StatementStorage;
 
+    //////////////////////////////
+    // Constants
+    //////////////////////////////
+
     bytes32 public constant OWNER_ROLE = AccessControlUpgradeable.DEFAULT_ADMIN_ROLE;
     bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
+    uint256 public constant MIN_ORDER_PRICE = 2e18;
 
     //////////////////////////////
     // Storage
@@ -41,8 +46,9 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     // Modifiers
     //////////////////////////////
 
-    modifier statementMustBeActive(uint256 statementId) {
-        require(statementStorage.isActive(statementId), "Statement does not exist or is inactive");
+    modifier orderInputIsValid(OrderLibrary.OrderInput memory orderInput) {
+        require(statementStorage.isActive(orderInput.statementId), "Statement does not exist or is inactive");
+        require(orderInput.price >= MIN_ORDER_PRICE, "Price is too low");
         _;
     }
 
@@ -64,22 +70,25 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         revokeRole(RELAYER_ROLE, relayer);
     }
 
-
     //////////////////////////////
     // Orders API
     //////////////////////////////
 
-    function getOrder(uint256 orderId) public view returns (OrderLibrary.Order memory) {
+    function getOrder(uint256 orderId) 
+        public
+        view
+        returns (OrderLibrary.Order memory) 
+    {
         return orderStorage.get(orderId);
     }
 
     function createOrder(OrderLibrary.OrderInput memory orderInput)
         public
-        statementMustBeActive(orderInput.statementId)
+        orderInputIsValid(orderInput)
         returns (uint256)
     {
-        uint256 id = orderStorage.create(orderInput, msg.sender);
         require(token.transferFrom(msg.sender, address(this), orderInput.price), "Transfer failed");
+        uint256 id = orderStorage.create(orderInput, msg.sender);
         emit OrderCreated(id, orderInput, msg.sender);
         return id;
     }
@@ -89,7 +98,6 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         onlyRole(RELAYER_ROLE)
     {
         OrderLibrary.Order memory order = getOrder(orderId);
-        orderStorage.close(orderId, producer, finalPrice, proof);
 
         require(Tools.verifyProof(orderId, proof), "Proof is not valid");
 
@@ -97,6 +105,7 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
         
+        orderStorage.close(orderId, producer, finalPrice, proof);
         emit OrderClosed(orderId, producer, finalPrice, proof);
     }
 
