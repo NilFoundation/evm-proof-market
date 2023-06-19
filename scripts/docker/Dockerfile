@@ -1,4 +1,4 @@
-# Test environment for frontend nodejs apps
+# Test environment for nodejs
 FROM node:18
 
 WORKDIR /home
