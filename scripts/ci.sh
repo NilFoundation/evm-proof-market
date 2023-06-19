@@ -20,8 +20,8 @@ run_hardhat_test() {
         cd -
     else
         cd "$REPO_ROOT"
-        source "$SCRIPT_DIR/setup.sh"
-        npx hardhat test
+        npm ci
+        npx hardhat test --verbose
         cd -
     fi
 }

@@ -1,5 +1,5 @@
 # Test environment for nodejs
-FROM node:18
+FROM node:18.15
 
 WORKDIR /home
 
