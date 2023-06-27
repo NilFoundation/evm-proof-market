@@ -3,10 +3,11 @@ pragma solidity ^0.8.0;
 
 import { StatementLibrary } from "../libraries/statement_lib.sol";
 import { OrderLibrary } from "../libraries/order_lib.sol";
+import { Tools } from "../libraries/tools.sol";
 
 interface IProofMarketEndpoint {
     event OrderCreated(uint256 indexed id, OrderLibrary.OrderInput orderInput, address buyer);
-    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes proof);
+    event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32 proofHash);
     // TODO: emit structs properly
     event StatementAdded(uint256 id, StatementLibrary.Definition definition);
     event StatementDefinitionUpdated(uint256 id, StatementLibrary.Definition definition);
@@ -18,7 +19,7 @@ interface IProofMarketEndpoint {
 
     function getOrder(uint256 orderId) external view returns (OrderLibrary.Order memory);
     function createOrder(OrderLibrary.OrderInput memory orderInput) external returns (uint256);
-    function closeOrder(uint256 orderId, bytes memory proof, uint256 finalPrice, address producer) external;
+    function closeOrder(uint256 orderId, Tools.ProofData calldata proof, uint256 finalPrice, address producer) external;
 
     function getStatement(uint256 id) external view returns (StatementLibrary.StatementData memory);
     function addStatement(StatementLibrary.StatementInput memory statementInput) external;

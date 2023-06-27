@@ -4,6 +4,9 @@ require('@openzeppelin/hardhat-upgrades');
 require("@nomiclabs/hardhat-ethers");
 require("hardhat-gas-reporter");
 require('hardhat-storage-layout');
+require("hardhat-deploy");
+require('hardhat-deploy-ethers')
+require("hardhat-contract-sizer");
 
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -13,7 +16,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 1200,
+        runs: 200,
       },
     },
   },

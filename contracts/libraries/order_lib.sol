@@ -13,7 +13,7 @@ library OrderLibrary {
         address buyer;
         OrderStatus status;
         address producer;
-        bytes proof;
+        bytes32 proof_hash;
     }
 
     struct OrderInput {
@@ -43,7 +43,7 @@ library OrderLibrary {
             buyer: buyer,
             status: OrderStatus.OPEN,
             producer: address(0),
-            proof: new bytes(0)
+            proof_hash: bytes32(0)
         });
 
         return self.orderCounter;
@@ -59,14 +59,14 @@ library OrderLibrary {
         uint256 id,
         address producer,
         uint256 finalPrice,
-        bytes memory proof
+        bytes32 proof
     ) internal {
         require(id > 0 && id <= self.orderCounter, "Order not found");
         require(self.orders[id].status == OrderLibrary.OrderStatus.OPEN, "Order is not open");
         require(finalPrice <= self.orders[id].price, "Invalid final price");
 
         self.orders[id].producer = producer;
-        self.orders[id].proof = proof;
+        self.orders[id].proof_hash = proof;
         self.orders[id].status = OrderStatus.CLOSED;
     }
 }

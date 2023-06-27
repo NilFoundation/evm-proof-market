@@ -1,17 +1,25 @@
 {
   "name": "proof-market-endpoint",
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@nilfoundation/evm-placeholder-verification": "github:nilfoundation/evm-placeholder-verification#48-zkllvm-verification",
     "@openzeppelin/hardhat-upgrades": "^1.22.1",
-    "chai": "^4.3.7",
+    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomiclabs/hardhat-ethers": "^2.2.2",
+    "@openzeppelin/contracts": ">=4.7.2",
+    "dotenv": "^16.0.3",
     "ethers": "^5.7.2",
     "hardhat": "^2.13.0",
-    "hardhat-gas-reporter": "^1.0.9"
+    "hardhat-contract-sizer": "^2.8.0",
+    "hardhat-deploy": "^0.11.25",
+    "hardhat-deploy-ethers": "0.3.0-beta.13",
+    "install": "^0.13.0",
+    "npm": "^9.6.4"
   },
   "dependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@openzeppelin/contracts": "^4.8.2",
     "@openzeppelin/contracts-upgradeable": "^4.8.3",
-    "hardhat-storage-layout": "^0.1.7"
+    "hardhat-storage-layout": "^0.1.7",
+    "lossless-json": "^2.0.9"
   }
 }

@@ -23,6 +23,7 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     //////////////////////////////
 
     IERC20 public token;
+    address public verifier;
     OrderLibrary.OrderStorage private orderStorage;
     StatementLibrary.StatementStorage private statementStorage;
     // Add more storage slots here
@@ -31,10 +32,11 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     // Constructor
     //////////////////////////////
 
-    function initialize(IERC20 _token) public initializer {
+    function initialize(IERC20 _token, address _verifier) public initializer {
         __AccessControl_init();
         _setupRole(OWNER_ROLE, msg.sender);
         token = _token;
+        verifier = _verifier;
     }
 
     //////////////////////////////
@@ -84,20 +86,22 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         return id;
     }
 
-    function closeOrder(uint256 orderId, bytes memory proof, uint256 finalPrice, address producer)
+    function closeOrder(uint256 orderId, Tools.ProofData calldata proof, uint256 finalPrice, address producer)
         public
         onlyRole(RELAYER_ROLE)
     {
         OrderLibrary.Order memory order = getOrder(orderId);
-        orderStorage.close(orderId, producer, finalPrice, proof);
+        // compute hash of proof
+        bytes32 proofHash = Tools.hashProof(orderId, proof);
+        orderStorage.close(orderId, producer, finalPrice, proofHash);
 
-        require(Tools.verifyProof(orderId, proof), "Proof is not valid");
+        require(Tools.verifyProof(orderId, proof, verifier), "Proof is not valid");
 
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
         
-        emit OrderClosed(orderId, producer, finalPrice, proof);
+        emit OrderClosed(orderId, producer, finalPrice, proofHash);
     }
 
     //////////////////////////////
