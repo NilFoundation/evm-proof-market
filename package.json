@@ -2,6 +2,7 @@
   "name": "proof-market-endpoint",
   "devDependencies": {
     "@nilfoundation/evm-placeholder-verification": "github:nilfoundation/evm-placeholder-verification#48-zkllvm-verification",
+    "@nilfoundation/evm-mina-state": "github:nilfoundation/mina-state-proof#78-public-input",
     "@openzeppelin/hardhat-upgrades": "^1.22.1",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.2",

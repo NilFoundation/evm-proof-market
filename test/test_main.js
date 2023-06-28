@@ -2,66 +2,18 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployProofMarketFixture } = require("./fixtures.js");
-const fs = require("fs");
-const path = require("path");
-const losslessJSON = require("lossless-json")
-const {deployments, getNamedAccounts} = hre;
+const { getVerifierParams } = require("./utils.js");
+const { deployments } = hre;
 
-function loadParamsFromFile(jsonFile) {
-    const named_params = losslessJSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-    params = {};
-    params.init_params = [];
-    params.init_params.push(BigInt(named_params.modulus.value));
-    params.init_params.push(BigInt(named_params.r.value));
-    params.init_params.push(BigInt(named_params.max_degree.value));
-    params.init_params.push(BigInt(named_params.lambda.value));
-    params.init_params.push(BigInt(named_params.rows_amount.value));
-    params.init_params.push(BigInt(named_params.omega.value));
-    params.init_params.push(BigInt(named_params.D_omegas.length));
-    for (i in named_params.D_omegas) {
-        params.init_params.push(BigInt(named_params.D_omegas[i].value))
-    }
-    params.init_params.push(named_params.step_list.length);
-    for (i in named_params.step_list) {
-        params.init_params.push(BigInt(named_params.step_list[i].value))
-    }
-    params.init_params.push(named_params.arithmetization_params.length);
-    for (i in named_params.arithmetization_params) {
-        params.init_params.push(BigInt(named_params.arithmetization_params[i].value))
-    }
-
-    params.columns_rotations = [];
-    for (i in named_params.columns_rotations) {
-        r = []
-        for (j in named_params.columns_rotations[i]) {
-            r.push(BigInt(named_params.columns_rotations[i][j].value));
-        }
-        params.columns_rotations.push(r);
-    }
-    return params;
-}
-
-function loadPublicInput(public_input_path){
-    if(fs.existsSync(public_input_path)){
-        return losslessJSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-    } else 
-        return [];
-}
-
-function getVerifierParams(configPath, proofPath, publicInputPath) {
-    let public_input = loadPublicInput(path.resolve(__dirname, publicInputPath));
-    let params = loadParamsFromFile(path.resolve(__dirname, configPath));
-    params['proof'] = fs.readFileSync(path.resolve(__dirname, proofPath), 'utf8');
-    params['public_input'] = public_input;
-    return params
-}
-
-
-describe("Proof market  tests", function () {
+describe("Proof market tests", function () {
     let proofMarket, user, producer, relayer, testStatement, testOrder;
     
     before(async function () {
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
+        console.log("proofMarket address: ", proofMarket.address);
+        await deployments.fixture(['unifiedAdditionVerifierFixture']);
+        let unifiedAdditionVerifier = await ethers.getContract('UnifiedAdditionVerifier');
+        console.log("unifiedAdditionVerifier address: ", unifiedAdditionVerifier.address);
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
@@ -71,7 +23,8 @@ describe("Proof market  tests", function () {
             id: 567,
             definition: definition,
             price: price,
-            developer: producer.address
+            developer: producer.address,
+            verifier: unifiedAdditionVerifier.address
         };
 
         testOrder = {
@@ -79,6 +32,7 @@ describe("Proof market  tests", function () {
             input: ethers.utils.formatBytes32String("Example input"),
             price: ethers.utils.parseUnits("10", 18)
         };
+
     });
 
     describe("Statement tests", function () {
@@ -102,6 +56,8 @@ describe("Proof market  tests", function () {
             .to.equal(testStatement.definition.provingKey);
             expect(statement.price.price)
             .to.equal(testStatement.price.price);
+            expect(statement.verifier)
+            .to.equal(testStatement.verifier);
         });
 
         it("should revert if the caller is not the contract owner", async function () {
@@ -194,16 +150,13 @@ describe("Proof market  tests", function () {
             let configPath = "./data/unified_addition/lambda2.json"
             let proofPath = "./data/unified_addition/lambda2.data"
             let publicInputPath = "./data/unified_addition/public_input.json";
-            let params = getVerifierParams(configPath,proofPath, publicInputPath);
-            
-            await deployments.fixture(['unifiedAdditionGateFixture']);
-            let unifiedAdditionGate = await ethers.getContract('UnifiedAdditionGate');
+            let params = getVerifierParams(configPath, proofPath, publicInputPath);
+
             const proof = {
                 blob: params.proof,
                 init_params: params.init_params,
                 columns_rotations: params.columns_rotations,
                 public_input: params.public_input,
-                gate_argument: unifiedAdditionGate.address
             }
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
@@ -211,7 +164,7 @@ describe("Proof market  tests", function () {
                 finalPrice,
                 producer.address
             ))
-            .to.emit(proofMarket, "OrderClosed")
+            .to.emit(proofMarket, "OrderClosed");
             // .withArgs(orderId, producer.address, finalPrice, proof);
         });
 
@@ -222,7 +175,6 @@ describe("Proof market  tests", function () {
                 init_params: [1,2,3],
                 columns_rotations: [[1,2,3],[4,5,6]],
                 public_input: [1,2,3],
-                gate_argument: producer.address
             }
             const finalPrice = ethers.utils.parseUnits("9", 18);
 

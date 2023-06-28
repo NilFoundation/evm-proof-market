@@ -8,6 +8,8 @@ import { Tools } from "./libraries/tools.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "hardhat/console.sol";
+
 
 
 contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofMarketEndpoint {
@@ -23,7 +25,6 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     //////////////////////////////
 
     IERC20 public token;
-    address public verifier;
     OrderLibrary.OrderStorage private orderStorage;
     StatementLibrary.StatementStorage private statementStorage;
     // Add more storage slots here
@@ -32,11 +33,10 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     // Constructor
     //////////////////////////////
 
-    function initialize(IERC20 _token, address _verifier) public initializer {
+    function initialize(IERC20 _token) public initializer {
         __AccessControl_init();
         _setupRole(OWNER_ROLE, msg.sender);
         token = _token;
-        verifier = _verifier;
     }
 
     //////////////////////////////
@@ -91,11 +91,13 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         onlyRole(RELAYER_ROLE)
     {
         OrderLibrary.Order memory order = getOrder(orderId);
+        address verifier = statementStorage.get(order.statementId).verifier;
+        require(verifier != address(0), "Statement verifier is not set");
+        require(Tools.verifyProof(orderId, proof, verifier), "Proof is not valid");
+        
         // compute hash of proof
         bytes32 proofHash = Tools.hashProof(orderId, proof);
         orderStorage.close(orderId, producer, finalPrice, proofHash);
-
-        require(Tools.verifyProof(orderId, proof, verifier), "Proof is not valid");
 
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
@@ -134,6 +136,14 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     {
         statementStorage.update(id, price);
         emit StatementPriceUpdated(id, price);
+    }
+
+    function updateStatementVerifier(uint256 id, address verifier)
+        public
+        onlyRole(RELAYER_ROLE)
+    {
+        statementStorage.update(id, verifier);
+        emit StatementVerifierUpdated(id, verifier);
     }
 
     function removeStatement(uint256 id)

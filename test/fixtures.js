@@ -11,11 +11,8 @@ async function deployProofMarketFixture() {
 	// Deploy the token contract
 	const token = await ERC20.deploy();
 	await token.deployed();
-	// Deploy the verifier contract
-	await deployments.fixture(['placeholderVerifierFixture']);
-	let placeholder_verifier = await ethers.getContract('PlaceholderVerifier');
 	// Deploy the proof market contract
-	const proofMarket = await upgrades.deployProxy(ProofMarket, [token.address, placeholder_verifier.address]);
+	const proofMarket = await upgrades.deployProxy(ProofMarket, [token.address]);
     await proofMarket.deployed();
 	// Set the relayer role
 	await proofMarket.grantRole(proofMarket.RELAYER_ROLE(), relayer.address);

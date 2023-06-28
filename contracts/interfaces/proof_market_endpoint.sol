@@ -13,6 +13,7 @@ interface IProofMarketEndpoint {
     event StatementDefinitionUpdated(uint256 id, StatementLibrary.Definition definition);
     event StatementPriceUpdated(uint256 id, StatementLibrary.Price price);
     event StatementRemoved(uint256 id);
+    event StatementVerifierUpdated(uint256 id, address verifier);
 
     function grantRelayer(address relayer) external;
     function revokeRelayer(address relayer) external;

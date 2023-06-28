@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import '../interfaces/custom_verifier.sol';
 import '@nilfoundation/evm-placeholder-verification/contracts/interfaces/verifier.sol';
 import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
-// TODO: delete the following import, it's only for compilation of unified_addition_gen.sol
+// TODO: delete the following imports, it's only for compilation of the specified cotracts
 import '@nilfoundation/evm-placeholder-verification/contracts/test/unified_addition/unified_addition_gen.sol';
+import '@nilfoundation/evm-mina-state/contracts/account_proof/account_proof.sol';
 
 library Tools {
     struct ProofData {
@@ -12,7 +14,6 @@ library Tools {
         uint256[] init_params;
         int256[][] columns_rotations;
         uint256[] public_input;
-        address gate_argument;
     }
 
     function verifyProof(uint256 orderId, ProofData calldata proof, address verifier)
@@ -21,15 +22,13 @@ library Tools {
         returns (bool)
     {
         // TODO: move gate_argument to StatementData
-        IVerifier v = IVerifier(verifier);
-        return true;
-        // return v.verify(
-        //     proof.blob,
-        //     proof.init_params,
-        //     proof.columns_rotations,
-        //     proof.public_input,
-        //     proof.gate_argument
-        // );
+        ICustomVerifier v = ICustomVerifier(verifier);
+        return v.verify(
+            proof.blob,
+            proof.init_params,
+            proof.columns_rotations,
+            proof.public_input
+        );
     }
 
     function hashProof(uint256 orderId, ProofData calldata proof)
@@ -37,8 +36,6 @@ library Tools {
         pure
         returns (bytes32)
     {
-        // return keccak256(abi.encode(orderId, proof.blob, proof.init_params, proof.columns_rotations));
-        // for now, just return a constant
-        return bytes32(0x1234567890123456789012345678901234567890123456789012345678901234);
+        return keccak256(abi.encode(orderId, proof.blob, proof.init_params, proof.columns_rotations));
     }
 }
