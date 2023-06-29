@@ -66,7 +66,6 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         revokeRole(RELAYER_ROLE, relayer);
     }
 
-
     //////////////////////////////
     // Orders API
     //////////////////////////////

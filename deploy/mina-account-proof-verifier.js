@@ -1,6 +1,7 @@
 const hre = require('hardhat')
 const {deployments, getNamedAccounts} = hre;
 const {deploy} = deployments;
+const { getVerifierParams, getVerifierParamsAccount, getVerifierParamsState } = require("../test/utils.js");
 
 module.exports = async function() {
     const {deployer} = await getNamedAccounts();
@@ -37,11 +38,14 @@ module.exports = async function() {
     await deployments.fixture(['placeholderVerifierFixture']);
     let placeholderVerifier = await ethers.getContract('PlaceholderVerifier');
 
-    await deploy('AccountPathProof',{
+    let params = getVerifierParamsAccount();
+    await deploy('AccountPathVerifier',{
         from:deployer,
         args:[
             placeholderVerifier.address,
             account_split_gen_address,
+            params.init_params,
+            params.columns_rotations,
         ],
         log:true
     })

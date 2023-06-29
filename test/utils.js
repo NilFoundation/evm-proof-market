@@ -61,9 +61,32 @@ function getVerifierParamsAccount() {
     return account_path_params;
 }
 
+function getVerifierParamsState() {
+    let params = {}
+
+    params['proof'] = fs.readFileSync(path.resolve(__dirname, "./data/mina_state/proof_state.bin"), 'utf8');
+
+    params['init_params'] = [[24760, 21744], [], []];
+
+    params['columns_rotations'] = [[], []]
+
+    // For proof 1
+    let base_params = loadParamsFromFile(path.resolve(__dirname, "./data/mina_state/verifier_params_state_base.json"));
+    params['init_params'][1] = base_params.init_params;
+    params['columns_rotations'][0] = base_params.columns_rotations;
+
+    // For proof 2
+    let scalar_params = loadParamsFromFile(path.resolve(__dirname, "./data/mina_state/verifier_params_state_scalar.json"));
+    params['init_params'][2] = scalar_params.init_params;
+    params['columns_rotations'][1] = scalar_params.columns_rotations;
+
+    return params;
+}
+
 module.exports = {
     getVerifierParams,
     getVerifierParamsAccount,
     loadParamsFromFile,
     loadPublicInput,
+    getVerifierParamsState,
 }

@@ -1,12 +1,14 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+
 import '@nilfoundation/evm-placeholder-verification/contracts/interfaces/verifier.sol';
-import '@nilfoundation/evm-placeholder-verification/contracts/test/unified_addition/unified_addition_gen.sol';
+// import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
+
+import '@nilfoundation/evm-mina-state/contracts/account_proof/gates/gate_argument.sol';
 
 
-contract UnifiedAdditionVerifier is Ownable {
+contract AccountPathVerifier is Ownable {
 
     address _verifier;
     address _gates;
@@ -17,7 +19,7 @@ contract UnifiedAdditionVerifier is Ownable {
         address verifier,
         address gates,
         uint256[] memory init_params,
-        int256[][] memory columns_rotations
+        int256[][] memory columns_rotations        
     ) {
         _verifier = verifier;
         _gates = gates;
@@ -25,28 +27,20 @@ contract UnifiedAdditionVerifier is Ownable {
         _columns_rotations = columns_rotations;
     }
 
-    function setVerifier(address verifier)
-        external
-        onlyOwner
-    {
+    function setVerifier(address verifier) external onlyOwner {
         _verifier = verifier;
     }
 
-    function setGates(address gates)
-        external
-        onlyOwner
-    {
+    function setGates(address gates) external onlyOwner {
         _gates = gates;
     }
 
     function verify(
         bytes calldata blob,
+        // uint256[] calldata init_params,
+        // int256[][] calldata columns_rotations, 
         uint256[] calldata public_input
-    )
-        external 
-        view 
-        returns (bool)
-    {
+    ) external view returns (bool) {
         IVerifier v = IVerifier(_verifier);
         return v.verify(blob, _init_params, _columns_rotations, public_input, _gates);
     }
