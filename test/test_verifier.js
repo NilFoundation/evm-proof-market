@@ -103,40 +103,40 @@ describe('Proof validation tests', function () {
         });
     })
 
-    // describe('Mina State Proof', function () {
-    //     it("Should verify correct proof", async function () {
-    //         let params = getVerifierParamsState();
-    //         await deployments.fixture(['minaStateProofVerifierFixture']);
-    //         let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
+    describe('Mina State Proof', function () {
+        it("Should verify correct proof", async function () {
+            let params = getVerifierParamsState();
+            await deployments.fixture(['minaStateProofVerifierFixture']);
+            let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
 
-    //         let tx = await proofMarket.connect(relayer).updateStatementVerifier(
-    //             testStatement.id,
-    //             minaStateProofVerifier.address
-    //         );
-    //         await tx.wait();
+            let tx = await proofMarket.connect(relayer).updateStatementVerifier(
+                testStatement.id,
+                minaStateProofVerifier.address
+            );
+            await tx.wait();
             
-    //         // TODO: set public input
-    //         tx = await proofMarket.connect(user).createOrder(testOrder);
-    //         const receipt = await tx.wait();
-    //         const orderCreatedEvent = receipt.events.find(
-    //             (e) => e.event === "OrderCreated"
-    //         );
-    //         console.log(params);
-    //         const orderId = orderCreatedEvent.args.id;
-    //         const proof = {
-    //             blob: params.proof,
-    //             // init_params: params.init_params,
-    //             // columns_rotations: params.columns_rotations,
-    //             public_input: []
-    //         }  
-    //         await expect(proofMarket.connect(relayer).closeOrder(
-    //             orderId,
-    //             proof,
-    //             testOrder.price,
-    //             producer.address,
-    //             {gasLimit: 30_500_000}
-    //         ))
-    //         .to.emit(proofMarket, "OrderClosed");
-    //     });
-    // })
+            // TODO: set public input
+            tx = await proofMarket.connect(user).createOrder(testOrder);
+            const receipt = await tx.wait();
+            const orderCreatedEvent = receipt.events.find(
+                (e) => e.event === "OrderCreated"
+            );
+            // console.log(params);
+            const orderId = orderCreatedEvent.args.id;
+            const proof = {
+                blob: params.proof,
+                // init_params: params.init_params,
+                // columns_rotations: params.columns_rotations,
+                public_input: []
+            }  
+            await expect(proofMarket.connect(relayer).closeOrder(
+                orderId,
+                proof,
+                testOrder.price,
+                producer.address,
+                {gasLimit: 30_500_000}
+            ))
+            .to.emit(proofMarket, "OrderClosed");
+        });
+    })
 });

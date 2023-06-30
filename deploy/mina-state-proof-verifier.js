@@ -1,10 +1,10 @@
 const hre = require('hardhat')
+const { getVerifierParamsState } = require("../test/utils.js");
 const {deployments, getNamedAccounts} = hre;
 const {deploy} = deployments;
-const { getVerifierParams, getVerifierParamsAccount, getVerifierParamsState } = require("../test/utils.js");
 
-module.exports = async function() {
-    const {deployer} = await getNamedAccounts();
+module.exports = async function () {
+    const {deployer, tokenOwner} = await getNamedAccounts();
 
     let libs = [
         "mina_base_gate0",
@@ -57,20 +57,36 @@ module.exports = async function() {
         from: deployer,
         libraries: deployedLib,
         log: true,
-    });    
-    
+    });
+
+    libs = [
+        "placeholder_verifier"
+    ]
+    deployedLib = {}
+    for (let lib of libs) {
+        await deploy(lib, {
+            from: deployer,
+            log: true,
+        });
+        deployedLib[lib] = (await hre.deployments.get(lib)).address
+    }
+
+    await deploy('PlaceholderVerifier', {
+        from: deployer,
+        libraries: deployedLib,
+        log: true,
+    });
+
+    verifier_address = (await hre.deployments.get('PlaceholderVerifier')).address;
     mina_base_split_gen_address = (await hre.deployments.get('mina_base_split_gen')).address;
     mina_scalar_split_gen_address = (await hre.deployments.get('mina_scalar_split_gen')).address;
 
-    await deployments.fixture(['placeholderVerifierFixture']);
-    let placeholderVerifier = await ethers.getContract('PlaceholderVerifier');
+    const params = getVerifierParamsState();
 
-    let params = getVerifierParamsState();
-    // console.log(params);
     await deploy('MinaStateVerifier',{
         from:deployer,
         args:[
-            placeholderVerifier.address,
+            verifier_address,
             mina_base_split_gen_address,
             mina_scalar_split_gen_address,
             params.init_params,
