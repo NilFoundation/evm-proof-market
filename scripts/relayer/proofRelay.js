@@ -8,8 +8,7 @@ const constants = JSON.parse(fs.readFileSync(path.join(__dirname, 'constants.jso
 
 async function updateOrderStatus(orderId, status) {
     try {
-        // TODO: Update after renaming changes
-        const url = `${constants.serviceUrl}/bid/${orderId}`;
+        const url = `${constants.serviceUrl}/request/${orderId}`;
         const response = await axios.patch(url, { status }, {
             auth: {
                 username: credentials.username,
@@ -31,7 +30,7 @@ async function relayProofs(contract, relayer) {
             {"key":"sender", "value": credentials.username},
             {"key":"status", "value":"complete"}
         ];
-        const url = `${constants.serviceUrl}/bid?q=${JSON.stringify(pattern)}`;
+        const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await axios.get(url, {
             auth: {
                 username: credentials.username,

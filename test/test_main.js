@@ -13,7 +13,7 @@ describe("Proof market  tests", function () {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
-        price = { price: 100 };
+        price = { orderBook: [[100], [100]] };
         testStatement = {
             id: 567,
             definition: definition,
@@ -47,8 +47,6 @@ describe("Proof market  tests", function () {
             .to.equal(testStatement.definition.verificationKey);
             expect(statement.definition.provingKey)
             .to.equal(testStatement.definition.provingKey);
-            expect(statement.price.price)
-            .to.equal(testStatement.price.price);
         });
 
         it("should revert if the caller is not the contract owner", async function () {
@@ -70,7 +68,7 @@ describe("Proof market  tests", function () {
                 verificationKey: ethers.utils.formatBytes32String("Updated verification key"),
                 provingKey: ethers.utils.formatBytes32String("Updated proving key")
             }
-            const updatedPrice = { price: 200 };
+            const updatedPrice = { orderBook: [[100], [100]] };
 
             await expect(proofMarket.connect(relayer)
             .updateStatementDefinition(statementId, updatedDefinition))
@@ -84,7 +82,11 @@ describe("Proof market  tests", function () {
             expect(statement.id).to.equal(statementId);
             expect(statement.definition.verificationKey).to.equal(updatedDefinition.verificationKey);
             expect(statement.definition.provingKey).to.equal(updatedDefinition.provingKey);
-            expect(statement.price.price).to.equal(updatedPrice.price);
+            for (let i = 0; i < statement.price.orderBook.length; i++) {
+                for (let j = 0; j < statement.price.orderBook[i].length; j++) {
+                    expect(statement.price.orderBook[i][j]).to.equal(updatedPrice.orderBook[i][j]);
+                }
+            }
         });
 
         it("should remove a statement", async function () {

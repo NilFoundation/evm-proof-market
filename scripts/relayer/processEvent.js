@@ -19,7 +19,7 @@ async function processOrderCreatedEvent(event) {
     console.log('Submitting order:', order);
 
     try {
-        const url = `${constants.serviceUrl}/bid`;
+        const url = `${constants.serviceUrl}/request`;
         const response = await axios.post(url, order, {
             auth: {
                 username: credentials.username,

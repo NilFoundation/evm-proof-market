@@ -9,7 +9,8 @@ const scripts = [
 ];
 
 function runScript(script) {
-    const child = spawn('node', [script]);
+    // const child = spawn('node', [script]);
+    const child = spawn('npx', ['hardhat', 'run', '--network', 'localhost', script]);
 
     child.stdout.on('data', (data) => {
         console.log(`Output from ${script}: ${data}`);
