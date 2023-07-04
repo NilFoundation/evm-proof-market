@@ -35,4 +35,31 @@ async function processOrderCreatedEvent(event) {
     }
 }
 
-module.exports = processOrderCreatedEvent;
+async function processOrderClosedEvent(event) {
+    const orderId = event.args.orderId;
+    console.log('Order closed:', orderId);
+    await updateOrderStatus(orderId, 'closed');
+}
+
+async function updateOrderStatus(orderId, status) {
+    try {
+        const url = `${constants.serviceUrl}/request/${orderId}`;
+        const response = await axios.patch(url, { status }, {
+            auth: {
+                username: credentials.username,
+                password: credentials.password
+            }
+        });
+        if (response.status !== 200) {
+            throw new Error(`Received status code ${response.status}`);
+        }
+        console.log(`Order ${orderId} status updated to ${status}`);
+    } catch (error) {
+        console.error(`Failed to update order ${orderId} status:`, error);
+    }
+}
+
+module.exports = {
+    processOrderCreatedEvent,
+    processOrderClosedEvent
+};

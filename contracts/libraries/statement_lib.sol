@@ -26,7 +26,7 @@ library StatementLibrary {
     }
 
     struct Price {
-        uint256 price;
+        uint256[][] orderBook;
     }
 
     struct Definition {
