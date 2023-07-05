@@ -11,8 +11,8 @@ const constants = JSON.parse(fs.readFileSync(path.join(__dirname, 'constants.jso
 async function relayProofs(contract, relayer) {
     try {
         const pattern = [
-            {"key":"sender", "value": credentials.username},
-            {"key":"status", "value":"complete"}
+            {"key":"sender", "value":credentials.username},
+            {"key":"status", "value":"completed"}
         ];
         const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await axios.get(url, {
@@ -21,15 +21,28 @@ async function relayProofs(contract, relayer) {
                 password: credentials.password
             }
         });
-        console.log(response.data);
+        console.log("Relaying proofs", response.data);
         const orders = response.data;
         const closeOrderPromises = [];
 
         for (let order of orders) {
-            const id = order.id;
-            const proof = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(order.proof));
+            const id = parseInt(order.eth_id);
+            const proof_key = order.proof_key;
+            if (isNaN(id)) {
+                throw new Error(`Invalid order ID: ${order.eth_id}`);
+            }
+            const url = `${constants.serviceUrl}/proof/${proof_key}`;
+            const response = await axios.get(url, {
+                auth: {
+                    username: credentials.username,
+                    password: credentials.password
+                }
+            });
+            const proof = response.data.proof;
             const price = ethers.utils.parseUnits(order.cost.toString(), 18);
-            const producerAddress = order.producer;
+            // const producerAddress = order.producer;
+            const producerAddress = ethers.constants.AddressZero;
+            console.log("Closing order", id, proof, price, producerAddress)
             
             closeOrderPromises.push(
                 contract.connect(relayer).closeOrder(id, proof, price, producerAddress)
@@ -50,7 +63,7 @@ async function relayProofs(contract, relayer) {
 async function relayStatuses(contract, relayer) {
     try {
         const pattern = [
-            {"key":"sender", "value": credentials.username},
+            {"key":"sender", "value":credentials.username},
             {"key":"status", "value":"processing"},
             {"key":"relayerFetched", "value":null},
         ];
@@ -61,7 +74,7 @@ async function relayStatuses(contract, relayer) {
                 password: credentials.password
             }
         });
-        console.log(response.data);
+        console.log("Relaying statuses", response.data);
         // const orders = response.data;
         // TODO: update statuses on Endpoint contract
     } catch (error) {
@@ -81,7 +94,7 @@ async function main() {
     const proofMarket = ProofMarketEndpoint.attach(contractAddress);
     while (true) {
         await relayProofs(proofMarket, relayer);
-        await relayStatuses(proofMarket, relayer);
+        // await relayStatuses(proofMarket, relayer);
         await delay(10000);
     }
 }

@@ -15,6 +15,7 @@ async function processOrderCreatedEvent(event) {
         cost: Number(hre.ethers.utils.formatUnits(price)),
         statement_key: String(statementId),
         input: String(input),
+        eth_id: String(id),     // TODO: make sure that new attributes are allowed
     };
     console.log('Submitting order:', order);
 

@@ -21,20 +21,20 @@ async function main() {
     console.log("User balance:", ethers.utils.formatUnits(balance, 18));
 
     // add a statement
-    const statementId = Math.floor(Math.random() * 1000000);
+    const statementId = '32326';
     try {
         const definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
-        const price = { price: 100 };
+        const price = { orderBook: [[100], [100]] };
         const testStatement = {id: statementId, definition: definition, price: price, developer: producer.address };
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementAdded");
         console.log('Statement added successfully: id ', event.args.id);
     } catch (error) {
-        if (error.message.includes('Statement already exists')) {
+        if (error.message.includes('Statement ID already exists')) {
             console.error('Error: Statement already exists');
         } else {
             console.error('Unexpected error:', error);

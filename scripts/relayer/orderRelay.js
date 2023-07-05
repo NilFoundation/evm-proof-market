@@ -1,8 +1,7 @@
 const hre = require('hardhat');
 const fs = require('fs');
 const setupEventListener = require('./eventListener');
-const processOrderCreatedEvent = require('./processEvent');
-const processOrderClosedEvent = require('./processEvent');
+const { processOrderCreatedEvent, processOrderClosedEvent }  = require('./processEvent');
 
 async function main() {
     const contractArtifact = await hre.artifacts.readArtifact('ProofMarketEndpoint');
