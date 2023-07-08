@@ -136,12 +136,19 @@ describe("Proof market  tests", function () {
             .to.be.revertedWith("Statement does not exist or is inactive");
         });
 
+        it("should set producer", async function () {
+            const orderId = 1;
+            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            .to.emit(proofMarket, "OrderProcessing")
+            .withArgs(orderId, producer.address);
+        });
+
         it("should close an order", async function () {
             const orderId = 1;
             const proof = ethers.utils.formatBytes32String("Example proof");
             const finalPrice = ethers.utils.parseUnits("9", 18);
 
-            await expect(proofMarket.connect(relayer).closeOrder(orderId, proof, finalPrice, producer.address))
+            await expect(proofMarket.connect(relayer).closeOrder(orderId, proof, finalPrice))
             .to.emit(proofMarket, "OrderClosed")
             .withArgs(orderId, producer.address, finalPrice, proof);
         });
@@ -153,7 +160,7 @@ describe("Proof market  tests", function () {
 
             const nonRelayer = proofMarket.connect(user);
 
-            await expect(nonRelayer.closeOrder(orderId, proof, finalPrice, producer.address))
+            await expect(nonRelayer.closeOrder(orderId, proof, finalPrice))
             .to.be.revertedWith(/AccessControl/);
         });
     });
