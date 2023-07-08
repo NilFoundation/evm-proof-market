@@ -43,7 +43,7 @@ async function saveLastProcessedTimestamp(status, timestamp) {
     }
 }
 
-async function processOrder(contract, relayer, order) {
+async function closeOrder(contract, relayer, order) {
     try {
         const id = parseInt(order.eth_id);
         const proof_key = order.proof_key;
@@ -55,13 +55,29 @@ async function processOrder(contract, relayer, order) {
         let response = await getAuthenticated(`${constants.serviceUrl}/proof/${proof_key}`);
         const bytes = ethers.utils.toUtf8Bytes(response.data.proof);
         const proof = ethers.utils.hexlify(bytes);
-        const producerName = response.data.sender;
         const price = ethers.utils.parseUnits(order.cost.toString(), 18);
+
+        return contract.connect(relayer).closeOrder(id, proof, price);
+    } catch (error) {
+        console.error(`Error processing order ${order.eth_id}:`, error);
+    }
+}
+
+async function setProducer(contract, relayer, order) {
+    try {
+        const id = parseInt(order.eth_id);
+        const proposal_key = order.proposal_key;
+        let response = await getAuthenticated(`${constants.serviceUrl}/proposal/${proposal_key}`);
+        const producerName = response.data.sender;
 
         response = await getAuthenticated(`${constants.serviceUrl}/producer/${producerName}`);
         const producerAddress = response.data.eth_address;
+        if (producerAddress === null) {
+            producerAddress = relayer.address;
+        }
 
-        return contract.connect(relayer).closeOrder(id, proof, price, producerAddress);
+        return contract.connect(relayer).setProducer(id, producerAddress);
+
     } catch (error) {
         console.error(`Error processing order ${order.eth_id}:`, error);
     }
@@ -81,7 +97,7 @@ async function relayProofs(contract, relayer) {
         const orders = response.data;
         console.log(`Relaying ${orders.length} proofs...`)
         console.log(orders);
-        const closeOrderPromises = orders.map(order => processOrder(contract, relayer, order));
+        const closeOrderPromises = orders.map(order => closeOrder(contract, relayer, order));
         const results = await Promise.all(closeOrderPromises);
         results.forEach(result => console.log(result));
 
@@ -106,8 +122,9 @@ async function relayStatuses(contract, relayer) {
         const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await getAuthenticated(url);
 
-        // TODO: update statuses on Endpoint contract
-
+        const setProducerPromises = response.data.map(order => setProducer(contract, relayer, order));
+        const results = await Promise.all(setProducerPromises);
+        results.forEach(result => console.log(result));
         const maxTimestamp = Math.max(...response.data.map(order => order.updatedOn));
         await saveLastProcessedTimestamp('processing', maxTimestamp);
     } catch (error) {
