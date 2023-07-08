@@ -44,7 +44,7 @@ async function processOrderClosedEvent(event) {
 
 async function updateOrderStatus(orderId, status) {
     try {
-        const url = `${constants.serviceUrl}/request/${orderId}`;
+        const url = `${constants.cursorUrl}`;
         const response = await axios.patch(url, { status }, {
             auth: {
                 username: credentials.username,

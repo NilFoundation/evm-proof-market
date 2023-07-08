@@ -1,3 +1,4 @@
 {
-    "serviceUrl": "http://127.0.0.1:8529/_db/market/test"
+    "serviceUrl": "http://127.0.0.1:8529/_db/market/test",
+    "cursorUrl": "http://127.0.0.1:8529/_db/market/_api/cursor"
 }

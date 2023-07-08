@@ -3,8 +3,15 @@ const fs = require('fs');
 const path = require('path');
 
 async function getLastProcessedBlock(eventName) {
+    const filePath = path.join(__dirname, `${eventName}_lastBlock.json`);
+
     try {
-        const data = fs.readFileSync(path.join(__dirname, `${eventName}_lastBlock.json`), 'utf-8');
+        if (!fs.existsSync(filePath)) {
+            fs.writeFileSync(filePath, '0');
+            return 0;
+        }
+        
+        const data = fs.readFileSync(filePath, 'utf-8');
         return Number(data);
     } catch (error) {
         console.error(`Failed to get last processed block for event ${eventName}:`, error);
