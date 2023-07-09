@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import '@nilfoundation/evm-placeholder-verification/contracts/interfaces/verifier.sol';
-// import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
 import '@nilfoundation/evm-mina-state/contracts/state_proof/mina_state_proof.sol';
 import '@nilfoundation/evm-mina-state/contracts/state_proof/components/mina_base/gate_argument.sol';
 import '@nilfoundation/evm-mina-state/contracts/state_proof/components/mina_scalar/gate_argument.sol';
@@ -51,8 +50,6 @@ contract MinaStateVerifier is Ownable {
 
     function verify(
         bytes calldata blob,
-        // uint256[][] calldata init_params,
-        // int256[][][] calldata columns_rotations, 
         // TODO: add public_inputs
         uint256[] calldata public_input
     ) external view returns (bool) {

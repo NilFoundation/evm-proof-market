@@ -1,6 +1,5 @@
 
 const { ethers, upgrades } = require("hardhat");
-const { deployments } = hre;
 
 async function deployProofMarketFixture() {
     const ProofMarket = await ethers.getContractFactory("ProofMarketEndpoint");

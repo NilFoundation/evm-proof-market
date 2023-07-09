@@ -49,7 +49,7 @@ describe('Proof validation tests', function () {
             let proofPath = "./data/unified_addition/lambda2.data"
             let publicInputPath = "./data/unified_addition/public_input.json";
             let params = getVerifierParams(configPath,proofPath, publicInputPath);
-            const proof = [params.proof]
+            const proof = [params.proof];
   
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
@@ -96,24 +96,31 @@ describe('Proof validation tests', function () {
     describe('Mina State Proof', function () {
         it("Should verify correct proof", async function () {
             let params = getVerifierParamsState();
-            await deployments.fixture(['minaStateProofVerifierFixture']);
-            let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
+            await deployments.fixture(['minaStateProofScalarBaseVerifiersFixture']);
+            // let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
+            let minaStateBaseVerifier = await ethers.getContract('MinaStateBaseVerifier');
+            let minaStateScalarVerifier = await ethers.getContract('MinaStateScalarVerifier');
 
             let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
                 testStatement.id,
-                [minaStateProofVerifier.address]
+                [minaStateBaseVerifier.address, minaStateScalarVerifier.address]
             );
             await tx.wait();
             
             // TODO: set public input
+            testOrder.publicInputs = [[1,2,3], [4,5,6]];
             tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const orderCreatedEvent = receipt.events.find(
                 (e) => e.event === "OrderCreated"
             );
-            // console.log(params);
             const orderId = orderCreatedEvent.args.id;
-            const proof = [params.proof]
+            const size1 = params.init_params[0][0];
+            const size2 = params.init_params[0][1];
+            const proof = [
+                '0x' + params.proof.slice(2, 2 + 2 * size1),
+                '0x' + params.proof.slice(2 + 2 * size1, 2 + 2 * size1 + 2 * size2)
+            ]
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,

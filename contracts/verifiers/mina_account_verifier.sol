@@ -1,10 +1,8 @@
-pragma solidity >=0.8.4;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import '@nilfoundation/evm-placeholder-verification/contracts/interfaces/verifier.sol';
-// import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
-
 import '@nilfoundation/evm-mina-state/contracts/account_proof/gates/gate_argument.sol';
 
 
@@ -37,8 +35,6 @@ contract AccountPathVerifier is Ownable {
 
     function verify(
         bytes calldata blob,
-        // uint256[] calldata init_params,
-        // int256[][] calldata columns_rotations, 
         uint256[] calldata public_input
     ) external view returns (bool) {
         IVerifier v = IVerifier(_verifier);
