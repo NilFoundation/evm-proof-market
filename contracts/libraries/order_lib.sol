@@ -8,17 +8,17 @@ library OrderLibrary {
     struct Order {
         uint256 id;
         uint256 statementId;
-        bytes input;
+        uint256[][] publicInputs;
         uint256 price;
         address buyer;
         OrderStatus status;
         address producer;
-        bytes32 proof_hash;
+        bytes32 proofHash;
     }
 
     struct OrderInput {
         uint256 statementId;
-        bytes input;
+        uint256[][] publicInputs;
         uint256 price;
     }
 
@@ -38,12 +38,12 @@ library OrderLibrary {
         self.orders[self.orderCounter] = Order({
             id: self.orderCounter,
             statementId: inputData.statementId,
-            input: inputData.input,
+            publicInputs: inputData.publicInputs,
             price: inputData.price,
             buyer: buyer,
             status: OrderStatus.OPEN,
             producer: address(0),
-            proof_hash: bytes32(0)
+            proofHash: bytes32(0)
         });
 
         return self.orderCounter;
@@ -66,7 +66,7 @@ library OrderLibrary {
         require(finalPrice <= self.orders[id].price, "Invalid final price");
 
         self.orders[id].producer = producer;
-        self.orders[id].proof_hash = proof;
+        self.orders[id].proofHash = proof;
         self.orders[id].status = OrderStatus.CLOSED;
     }
 }

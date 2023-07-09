@@ -24,12 +24,12 @@ describe('Proof validation tests', function () {
             definition: definition,
             price: price,
             developer: producer.address,
-            verifier: unifiedAdditionVerifier.address
+            verifiers: [unifiedAdditionVerifier.address]
         };
 
         testOrder = {
             statementId: testStatement.id,
-            input: ethers.utils.formatBytes32String("Example input"),
+            publicInputs: [[1, 2, 3]],
             price: ethers.utils.parseUnits("10", 18)
         };
 
@@ -49,12 +49,7 @@ describe('Proof validation tests', function () {
             let proofPath = "./data/unified_addition/lambda2.data"
             let publicInputPath = "./data/unified_addition/public_input.json";
             let params = getVerifierParams(configPath,proofPath, publicInputPath);
-            const proof = {
-                blob: params.proof,
-                // init_params: params.init_params,
-                // columns_rotations: params.columns_rotations,
-                public_input: params.public_input
-            }
+            const proof = [params.proof]
   
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
@@ -70,9 +65,9 @@ describe('Proof validation tests', function () {
         it("Should verify correct proof", async function () {
             await deployments.fixture(['minaAccountProofVerifierFixture']);
             let minaAccountProofVerifier = await ethers.getContract('AccountPathVerifier');
-            let tx = await proofMarket.connect(relayer).updateStatementVerifier(
+            let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
                 testStatement.id,
-                minaAccountProofVerifier.address
+                [minaAccountProofVerifier.address]
             );
             await tx.wait();
             
@@ -85,12 +80,7 @@ describe('Proof validation tests', function () {
             const orderId = orderCreatedEvent.args.id;
             
             let params = getVerifierParamsAccount();
-            const proof = {
-                blob: params.proof,
-                // init_params: params.init_params,
-                // columns_rotations: params.columns_rotations,
-                public_input: []
-            }
+            const proof = [params.proof];
   
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
@@ -109,9 +99,9 @@ describe('Proof validation tests', function () {
             await deployments.fixture(['minaStateProofVerifierFixture']);
             let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
 
-            let tx = await proofMarket.connect(relayer).updateStatementVerifier(
+            let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
                 testStatement.id,
-                minaStateProofVerifier.address
+                [minaStateProofVerifier.address]
             );
             await tx.wait();
             
@@ -123,12 +113,7 @@ describe('Proof validation tests', function () {
             );
             // console.log(params);
             const orderId = orderCreatedEvent.args.id;
-            const proof = {
-                blob: params.proof,
-                // init_params: params.init_params,
-                // columns_rotations: params.columns_rotations,
-                public_input: []
-            }  
+            const proof = [params.proof]
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,

@@ -11,7 +11,7 @@ library StatementLibrary {
         Definition definition;
         Price price;
         address developer;
-        address verifier;
+        address[] verifiers;
     }
 
     struct StatementInput {
@@ -19,7 +19,7 @@ library StatementLibrary {
         Definition definition;
         Price price;
         address developer;
-        address verifier;
+        address[] verifiers;
     }
 
     struct Price {
@@ -48,7 +48,7 @@ library StatementLibrary {
             definition: statementInput.definition,
             price: statementInput.price,
             developer: statementInput.developer,
-            verifier: statementInput.verifier
+            verifiers: statementInput.verifiers
         });
 
         return statementInput.id;
@@ -77,11 +77,11 @@ library StatementLibrary {
         statement.definition = definition;
     }
 
-    function update(StatementStorage storage self, uint256 id, address verifier)
+    function update(StatementStorage storage self, uint256 id, address[] memory verifiers)
         internal
     {
         StatementData storage statement = get(self, id);
-        statement.verifier = verifier;
+        statement.verifiers = verifiers;
     }
 
     function remove(StatementStorage storage self, uint256 id)

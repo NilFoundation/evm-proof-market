@@ -85,18 +85,27 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         return id;
     }
 
-    function closeOrder(uint256 orderId, Tools.ProofData calldata proof, uint256 finalPrice, address producer)
+    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice, address producer)
         public
         onlyRole(RELAYER_ROLE)
     {
         OrderLibrary.Order memory order = getOrder(orderId);
-        address verifier = statementStorage.get(order.statementId).verifier;
-        require(verifier != address(0), "Statement verifier is not set");
-        require(Tools.verifyProof(orderId, proof, verifier), "Proof is not valid");
-        
-        // compute hash of proof
-        bytes32 proofHash = Tools.hashProof(orderId, proof);
-        orderStorage.close(orderId, producer, finalPrice, proofHash);
+        address[] memory verifier = statementStorage.get(order.statementId).verifiers;
+        bytes32[] memory proofHashes = new bytes32[](proofs.length);
+
+        uint256[][] memory publicInputs = order.publicInputs;
+        require(
+            proofs.length == publicInputs.length && proofs.length == verifier.length,
+            "Proofs, publicInputs and verifiers length mismatch"
+        );
+        for (uint256 i = 0; i < proofs.length; i++) {
+            require(
+                Tools.verifyProof(orderId, publicInputs[i], proofs[i], verifier[i]),
+                "Proof is not valid"
+            );
+            proofHashes[i] = Tools.hashProof(proofs[i]);
+        }
+        bytes32 proofHash = Tools.hashProofs(proofHashes);
 
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
@@ -137,12 +146,12 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         emit StatementPriceUpdated(id, price);
     }
 
-    function updateStatementVerifier(uint256 id, address verifier)
+    function updateStatementVerifiers(uint256 id, address[] memory verifiers)
         public
         onlyRole(RELAYER_ROLE)
     {
-        statementStorage.update(id, verifier);
-        emit StatementVerifierUpdated(id, verifier);
+        statementStorage.update(id, verifiers);
+        emit StatementVerifiersUpdated(id, verifiers);
     }
 
     function removeStatement(uint256 id)

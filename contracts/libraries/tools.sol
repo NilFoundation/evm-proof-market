@@ -7,40 +7,42 @@ import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
 
 
 library Tools {
-    struct ProofData {
-        bytes blob;
-        // uint256[] init_params;
-        // int256[][] columns_rotations;
-        uint256[] public_input;
-    }
-
-    function verifyProof(uint256 orderId, ProofData calldata proof, address verifier)
+    function verifyProof(
+        uint256 orderId,
+        uint256[] memory public_input,
+        bytes calldata blob,
+        address verifier
+    )
         internal
         view
         returns (bool)
     {
-        // TODO: move gate_argument to StatementData
         ICustomVerifier v = ICustomVerifier(verifier);
         return v.verify(
-            proof.blob,
-            // proof.init_params,
-            // proof.columns_rotations,
-            proof.public_input
+            blob,
+            public_input
         );
     }
 
-    function hashProof(uint256 orderId, ProofData calldata proof)
+    function hashProof(bytes calldata blob)
         internal
         pure
         returns (bytes32)
     {
         return keccak256(
-            abi.encode(
-                orderId,
-                proof.blob
-                // proof.init_params,
-                // proof.columns_rotations
-            )
+            abi.encode(blob)
         );
+    }
+
+    function hashProofs(bytes32[] memory blobs)
+        internal
+        pure
+        returns (bytes32)
+    {
+        bytes32 totalHash = keccak256(abi.encode(blobs[0]));
+        for (uint256 i = 1; i < blobs.length; i++) {
+            totalHash = keccak256(abi.encode(totalHash, blobs[i]));
+        }
+        return totalHash;        
     }
 }

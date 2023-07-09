@@ -13,18 +13,19 @@ interface IProofMarketEndpoint {
     event StatementDefinitionUpdated(uint256 id, StatementLibrary.Definition definition);
     event StatementPriceUpdated(uint256 id, StatementLibrary.Price price);
     event StatementRemoved(uint256 id);
-    event StatementVerifierUpdated(uint256 id, address verifier);
+    event StatementVerifiersUpdated(uint256 id, address[] verifiers);
 
     function grantRelayer(address relayer) external;
     function revokeRelayer(address relayer) external;
 
     function getOrder(uint256 orderId) external view returns (OrderLibrary.Order memory);
     function createOrder(OrderLibrary.OrderInput memory orderInput) external returns (uint256);
-    function closeOrder(uint256 orderId, Tools.ProofData calldata proof, uint256 finalPrice, address producer) external;
+    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice, address producer) external;
 
     function getStatement(uint256 id) external view returns (StatementLibrary.StatementData memory);
     function addStatement(StatementLibrary.StatementInput memory statementInput) external;
     function updateStatementDefinition(uint256 id, StatementLibrary.Definition memory definition) external;
     function updateStatementPrice(uint256 id, StatementLibrary.Price memory price) external;
+    function updateStatementVerifiers(uint256 id, address[] calldata verifiers) external;
     function removeStatement(uint256 id) external;
 }

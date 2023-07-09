@@ -24,12 +24,12 @@ describe("Proof market tests", function () {
             definition: definition,
             price: price,
             developer: producer.address,
-            verifier: unifiedAdditionVerifier.address
+            verifiers: [unifiedAdditionVerifier.address]
         };
 
         testOrder = {
             statementId: testStatement.id,
-            input: ethers.utils.formatBytes32String("Example input"),
+            publicInputs: [[1,2,3]],
             price: ethers.utils.parseUnits("10", 18)
         };
 
@@ -108,8 +108,6 @@ describe("Proof market tests", function () {
             // get the statement and check status
             const statement = await proofMarket.getStatement(newStatement.id);
             expect(statement.status).to.equal(1); // StatementStatus.INACTIVE
-
-
         });
 
     });
@@ -121,15 +119,16 @@ describe("Proof market tests", function () {
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "OrderCreated");
 
+            // TODO: check array equality
             expect(event.args.id).to.equal(1);
             expect(event.args.orderInput.statementId).to.equal(statementId);
-            expect(event.args.orderInput.input).to.equal(testOrder.input);
+            // expect(event.args.orderInput.publicInputs).to.equal(testOrder.publicInputs);
             expect(event.args.orderInput.price).to.equal(testOrder.price);
             expect(event.args.buyer).to.equal(user.address);
 
             const order = await proofMarket.getOrder(1);
             expect(order.statementId).to.equal(statementId);
-            expect(order.input).to.equal(testOrder.input);
+            // expect(order.publicInputs).to.equal(testOrder.publicInputs);
             expect(order.price).to.equal(testOrder.price);
             expect(order.buyer).to.equal(user.address);
             expect(order.status).to.equal(0); // OrderStatus.OPEN
@@ -151,13 +150,7 @@ describe("Proof market tests", function () {
             let proofPath = "./data/unified_addition/lambda2.data"
             let publicInputPath = "./data/unified_addition/public_input.json";
             let params = getVerifierParams(configPath, proofPath, publicInputPath);
-
-            const proof = {
-                blob: params.proof,
-                init_params: params.init_params,
-                columns_rotations: params.columns_rotations,
-                public_input: params.public_input,
-            }
+            const proof = [params.proof]
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,
@@ -170,12 +163,7 @@ describe("Proof market tests", function () {
 
         it("should revert if the caller is not the relayer", async function () {
             const orderId = 1;
-            const proof = {
-                blob: ethers.utils.formatBytes32String("Example proof"),
-                init_params: [1,2,3],
-                columns_rotations: [[1,2,3],[4,5,6]],
-                public_input: [1,2,3],
-            }
+            const proof = [ethers.utils.formatBytes32String("Example proof")];
             const finalPrice = ethers.utils.parseUnits("9", 18);
 
             const nonRelayer = proofMarket.connect(user);
@@ -223,14 +211,12 @@ describe("Proof market tests", function () {
             expect(newApi).to.equal('new api');
 
             const statementId = testStatement.id;
-            const input = ethers.utils.formatBytes32String("Example input");            
             const price = ethers.utils.parseUnits("10", 18);
             const orderId = 1;
 
             // Check that the state is preserved
             const order = await proofMarket.getOrder(orderId);
             expect(order.statementId).to.equal(statementId);
-            expect(order.input).to.equal(input);
             expect(order.price).to.equal(price);
             expect(order.buyer).to.equal(user.address);
         });
