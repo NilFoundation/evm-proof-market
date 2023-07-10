@@ -11,6 +11,7 @@ library StatementLibrary {
         Definition definition;
         Price price;
         address developer;
+        address[] verifiers;
     }
 
     struct StatementInput {
@@ -18,11 +19,7 @@ library StatementLibrary {
         Definition definition;
         Price price;
         address developer;
-    }
-
-    struct StatementStorage {
-        mapping(uint256 => StatementData) statements;
-        uint256[31] __gap;
+        address[] verifiers;
     }
 
     struct Price {
@@ -32,6 +29,11 @@ library StatementLibrary {
     struct Definition {
         bytes verificationKey;
         bytes provingKey;
+    }
+
+    struct StatementStorage {
+        mapping(uint256 => StatementData) statements;
+        uint256[31] __gap;
     }
 
     function add(StatementStorage storage self, StatementInput memory statementInput)
@@ -45,7 +47,8 @@ library StatementLibrary {
             status: StatementStatus.ACTIVE,
             definition: statementInput.definition,
             price: statementInput.price,
-            developer: statementInput.developer
+            developer: statementInput.developer,
+            verifiers: statementInput.verifiers
         });
 
         return statementInput.id;
@@ -72,6 +75,13 @@ library StatementLibrary {
     {
         StatementData storage statement = get(self, id);
         statement.definition = definition;
+    }
+
+    function update(StatementStorage storage self, uint256 id, address[] memory verifiers)
+        internal
+    {
+        StatementData storage statement = get(self, id);
+        statement.verifiers = verifiers;
     }
 
     function remove(StatementStorage storage self, uint256 id)

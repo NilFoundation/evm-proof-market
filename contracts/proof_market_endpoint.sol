@@ -64,7 +64,6 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         revokeRole(RELAYER_ROLE, relayer);
     }
 
-
     //////////////////////////////
     // Orders API
     //////////////////////////////
@@ -84,20 +83,33 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         return id;
     }
 
-    function closeOrder(uint256 orderId, bytes memory proof, uint256 finalPrice, address producer)
+    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice, address producer)
         public
         onlyRole(RELAYER_ROLE)
     {
         OrderLibrary.Order memory order = getOrder(orderId);
-        orderStorage.close(orderId, producer, finalPrice, proof);
+        address[] memory verifier = statementStorage.get(order.statementId).verifiers;
+        bytes32[] memory proofHashes = new bytes32[](proofs.length);
 
-        require(Tools.verifyProof(orderId, proof), "Proof is not valid");
+        uint256[][] memory publicInputs = order.publicInputs;
+        require(
+            proofs.length == publicInputs.length && proofs.length == verifier.length,
+            "Proofs, publicInputs and verifiers length mismatch"
+        );
+        for (uint256 i = 0; i < proofs.length; i++) {
+            require(
+                Tools.verifyProof(orderId, publicInputs[i], proofs[i], verifier[i]),
+                "Proof is not valid"
+            );
+            proofHashes[i] = Tools.hashProof(proofs[i]);
+        }
+        bytes32 proofHash = Tools.hashProofs(proofHashes);
 
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");
         
-        emit OrderClosed(orderId, producer, finalPrice, proof);
+        emit OrderClosed(orderId, producer, finalPrice, proofHash);
     }
 
     //////////////////////////////
@@ -130,6 +142,14 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
     {
         statementStorage.update(id, price);
         emit StatementPriceUpdated(id, price);
+    }
+
+    function updateStatementVerifiers(uint256 id, address[] memory verifiers)
+        public
+        onlyRole(RELAYER_ROLE)
+    {
+        statementStorage.update(id, verifiers);
+        emit StatementVerifiersUpdated(id, verifiers);
     }
 
     function removeStatement(uint256 id)
