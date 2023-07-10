@@ -57,3 +57,34 @@ To generate some events, you can use the following command:
 ```
 npx hardhat run --network <network> scripts/interact.js
 ```
+
+## Testing
+
+There is a testing dbms instance running on https://api.proof-market.dev.nil.foundation/.
+Also we have a running proof producer for testing EVM Proof Market.
+So the following steps can be used to test the contract and the relayer:
+
+1. Start a local node:
+```
+npx hardhat node
+```
+2. Deploy the contracts to the local network:
+```
+npx hardhat run scripts/deploy.js --network localhost
+```
+3. Start the relayer:
+```
+npx hardhat run --network localhost scripts/relayer.js
+```
+4. Submit a statement:
+```
+npx hardhat run --network localhost scripts/interact.js
+```
+5. Submit an order:
+```
+npx hardhat run --network localhost scripts/createOrder.js
+```
+6. Wait for the order to be completed:
+```
+npx hardhat run --network localhost scripts/trackOrder.js
+```
