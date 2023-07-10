@@ -51,7 +51,7 @@ describe("Proof market  tests", function () {
             .to.equal(testStatement.price.price);
         });
 
-        it("should revert if the caller is not the contract owner", async function () {
+        it("should revert if the caller is not the relayer", async function () {
             // connect to the contract as a non-owner
             const nonOwner = proofMarket.connect(user);
 
@@ -155,7 +155,8 @@ describe("Proof market  tests", function () {
             .to.be.revertedWith(/AccessControl/);
         });
     });
-    
+
+
     describe("Access control tests", function () {
         it("should grant the relayer role to the relayer", async function () {
             const hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
@@ -163,13 +164,12 @@ describe("Proof market  tests", function () {
         });
 
         it("should revoke the relayer role from the relayer", async function () {
-            await proofMarket.revokeRole(proofMarket.RELAYER_ROLE(), relayer.address);
-
-            const hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            await proofMarket.connect(owner).revokeRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            let hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
             expect(hasRole).to.be.false;
-            await proofMarket.grantRole(proofMarket.RELAYER_ROLE(), relayer.address);
-            const hasRole2 = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
-            expect(hasRole2).to.be.true;
+            await proofMarket.connect(owner).grantRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            hasRole = await proofMarket.hasRole(proofMarket.RELAYER_ROLE(), relayer.address);
+            expect(hasRole).to.be.true;
         });
 
         it("should revert if the caller is not the contract owner", async function () {
@@ -206,4 +206,6 @@ describe("Proof market  tests", function () {
             expect(order.buyer).to.equal(user.address);
         });
     });
+
+
 });
