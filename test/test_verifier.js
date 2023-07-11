@@ -18,7 +18,7 @@ describe('Proof validation tests', function () {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
-        price = { price: 100 };
+        price = { orderBook: [[100], [100]] };
         testStatement = {
             id: 567,
             definition: definition,
@@ -44,6 +44,10 @@ describe('Proof validation tests', function () {
                 (e) => e.event === "OrderCreated"
             );
             const orderId = orderCreatedEvent.args.id;
+
+            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            .to.emit(proofMarket, "OrderProcessing")
+            .withArgs(orderId, producer.address);
             
             let configPath = "./data/unified_addition/lambda2.json"
             let proofPath = "./data/unified_addition/lambda2.data"
@@ -54,8 +58,7 @@ describe('Proof validation tests', function () {
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,
-                testOrder.price,
-                producer.address
+                testOrder.price
             ))
             .to.emit(proofMarket, "OrderClosed");
         });
@@ -78,6 +81,10 @@ describe('Proof validation tests', function () {
                 (e) => e.event === "OrderCreated"
             );
             const orderId = orderCreatedEvent.args.id;
+
+            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            .to.emit(proofMarket, "OrderProcessing")
+            .withArgs(orderId, producer.address);
             
             let params = getVerifierParamsAccount();
             const proof = [params.proof];
@@ -86,7 +93,6 @@ describe('Proof validation tests', function () {
                 orderId,
                 proof,
                 testOrder.price,
-                producer.address,
                 {gasLimit: 30_500_000}
             ))
             .to.emit(proofMarket, "OrderClosed");
@@ -115,6 +121,11 @@ describe('Proof validation tests', function () {
                 (e) => e.event === "OrderCreated"
             );
             const orderId = orderCreatedEvent.args.id;
+
+            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            .to.emit(proofMarket, "OrderProcessing")
+            .withArgs(orderId, producer.address);
+            
             const size1 = params.init_params[0][0];
             const size2 = params.init_params[0][1];
             const proof = [
@@ -125,7 +136,6 @@ describe('Proof validation tests', function () {
                 orderId,
                 proof,
                 testOrder.price,
-                producer.address,
                 {gasLimit: 30_500_000}
             ))
             .to.emit(proofMarket, "OrderClosed");

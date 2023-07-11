@@ -161,8 +161,7 @@ describe("Proof market tests", function () {
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,
-                finalPrice,
-                producer.address
+                finalPrice
             ))
             .to.emit(proofMarket, "OrderClosed");
             // .withArgs(orderId, producer.address, finalPrice, proof);
