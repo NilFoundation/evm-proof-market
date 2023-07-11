@@ -93,7 +93,7 @@ describe("Proof market  tests", function () {
 
             await proofMarket.connect(relayer).addStatement(newStatement);
 
-            await expect(proofMarket.connect(owner).removeStatement(newStatement.id))
+            await expect(proofMarket.connect(relayer).removeStatement(newStatement.id))
             .to.emit(proofMarket, "StatementRemoved");
 
             // get the statement and check status
