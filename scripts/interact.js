@@ -20,15 +20,28 @@ async function main() {
     const balance = await token.balanceOf(user.address);
     console.log("User balance:", ethers.utils.formatUnits(balance, 18));
 
+    console.log("Producer address:", producer.address);
+    const balanceProducer = await token.balanceOf(producer.address);
+    console.log("Producer balance:", ethers.utils.formatUnits(balanceProducer, 18));
+
     // add a statement
     const statementId = '32326';
     try {
-        const definition = {
+        await deployments.fixture(['unifiedAdditionVerifierFixture']);
+        let unifiedAdditionVerifier = await ethers.getContract('UnifiedAdditionVerifier');
+        console.log("unifiedAdditionVerifier address: ", unifiedAdditionVerifier.address);
+        definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
-        const price = { orderBook: [[100], [100]] };
-        const testStatement = {id: statementId, definition: definition, price: price, developer: producer.address };
+        price = { orderBook: [[100], [100]] };
+        testStatement = {
+            id: statementId,
+            definition: definition,
+            price: price,
+            developer: producer.address,
+            verifiers: [unifiedAdditionVerifier.address]
+        };
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementAdded");
@@ -42,26 +55,26 @@ async function main() {
     }
 
     // add an order
-    try {
-        const input = ethers.utils.formatBytes32String("Example input");            
-        const price = ethers.utils.parseUnits("10", 18);
-        const testOrder = {
-            statementId: statementId,
-            input: input,
-            price: price
-        };
+    // try {
+    //     const input = [[1,2,3]];         
+    //     const price = ethers.utils.parseUnits("10", 18);
+    //     const testOrder = {
+    //         statementId: statementId,
+    //         publicInputs: input,
+    //         price: price
+    //     };
 
-        const tx = await proofMarket.connect(user).createOrder(testOrder);
-        const receipt = await tx.wait();
-        const event = receipt.events.find((e) => e.event === "OrderCreated");
-        console.log('Order created successfully: id ', event.args.id);
-    } catch (error) {
-        if (error.message.includes('Statement does not exist')) {
-            console.error('Error: Statement does not exist');
-        } else {
-            console.error('Unexpected error:', error);
-        }
-    }
+    //     const tx = await proofMarket.connect(user).createOrder(testOrder);
+    //     const receipt = await tx.wait();
+    //     const event = receipt.events.find((e) => e.event === "OrderCreated");
+    //     console.log('Order created successfully: id ', event.args.id);
+    // } catch (error) {
+    //     if (error.message.includes('Statement does not exist')) {
+    //         console.error('Error: Statement does not exist');
+    //     } else {
+    //         console.error('Unexpected error:', error);
+    //     }
+    // }
 }
 
 

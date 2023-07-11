@@ -2,6 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { ethers } = require("hardhat");
+const { getVerifierParams } = require("../../test/utils.js");
 
 let credentials, constants;
 
@@ -54,9 +55,18 @@ async function closeOrder(contract, relayer, order) {
 
         let response = await getAuthenticated(`${constants.serviceUrl}/proof/${proof_key}`);
         const bytes = ethers.utils.toUtf8Bytes(response.data.proof);
-        const proof = ethers.utils.hexlify(bytes);
+        const proof = [ethers.utils.hexlify(bytes)];
         const price = ethers.utils.parseUnits(order.cost.toString(), 18);
-
+        // console.log(proof, price);
+        // get order from service
+        // let configPath = "../test/data/unified_addition/lambda2.json"
+        // let proofPath = "../test/data/unified_addition/lambda2.data"
+        // let publicInputPath = "../test/data/unified_addition/public_input.json";
+        // let params = getVerifierParams(configPath,proofPath, publicInputPath);
+        // const proof = [params.proof];
+        
+        // const eth_order = await contract.connect(relayer).getOrder(id);
+        // console.log(eth_order);
         return contract.connect(relayer).closeOrder(id, proof, price);
     } catch (error) {
         console.error(`Error processing order ${order.eth_id}:`, error);
@@ -90,7 +100,7 @@ async function relayProofs(contract, relayer) {
         const pattern = [
             {"key":"sender", "value":credentials.username},
             {"key":"status", "value":"completed"},
-            {"key":"timestamp", "value":lastTimestamp, "op":">"}
+            {"key":"updatedOn", "value":lastTimestamp, "op":">"}
         ];
         const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await getAuthenticated(url);
@@ -101,8 +111,10 @@ async function relayProofs(contract, relayer) {
         const results = await Promise.all(closeOrderPromises);
         results.forEach(result => console.log(result));
 
-        const maxTimestamp = Math.max(...orders.map(order => order.updatedOn));
-        await saveLastProcessedTimestamp('completed', maxTimestamp);
+        const maxTimestamp = orders.length > 0 ? Math.max(...orders.map(order => order.updatedOn)) : 0;
+        if (maxTimestamp > 0) {
+            await saveLastProcessedTimestamp('completed', 0);
+        }
     } catch (error) {
         console.error("Failed to relay proofs:", error);
     }
@@ -114,19 +126,25 @@ async function relayStatuses(contract, relayer) {
 
         const pattern = [
             {"key":"sender", "value":credentials.username},
-            {"key":"status", "value":"processing"},
-            {"key":"timestamp", "value":lastTimestamp, "op":">"},
+            {"key":"status", "value":"created", "op":"~"},
+            {"key":"updatedOn", "value":lastTimestamp, "op":">"},
+            // TODO: set this flag after the order is fetched and the producer is set
+            // add it in relayProofs
             {"key":"relayerFetched", "value":null},
         ];
 
         const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await getAuthenticated(url);
+        console.log(response.data);
+        const orders = response.data;
 
         const setProducerPromises = response.data.map(order => setProducer(contract, relayer, order));
         const results = await Promise.all(setProducerPromises);
         results.forEach(result => console.log(result));
-        const maxTimestamp = Math.max(...response.data.map(order => order.updatedOn));
-        await saveLastProcessedTimestamp('processing', maxTimestamp);
+        const maxTimestamp = orders.length > 0 ? Math.max(...orders.map(order => order.updatedOn)) : 0;
+        if (maxTimestamp > 0) {
+            await saveLastProcessedTimestamp('processing', maxTimestamp);
+        }
     } catch (error) {
         console.error("Failed to relay statuses:", error);
     }
@@ -141,14 +159,14 @@ async function main() {
     constants = readJSONFile('constants.json');
 
     const [owner, user, producer, relayer] = await ethers.getSigners();
-    const addresses = readJSONFile('deployed_addresses.json');
+    const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
     const contractAddress = addresses.proofMarket;
     const ProofMarketEndpoint = await ethers.getContractFactory("ProofMarketEndpoint");
     const proofMarket = ProofMarketEndpoint.attach(contractAddress);
 
     while (true) {
         await relayProofs(proofMarket, relayer);
-        await relayStatuses(proofMarket, relayer);
+        // await relayStatuses(proofMarket, relayer);
         await delay(10000);
     }
 }

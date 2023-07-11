@@ -18,6 +18,7 @@ async function main() {
         });
     
     // Listen for OrderClosed events
+    // TODO: fix processOrderClosedEvent
     setupEventListener('OrderClosed', processOrderClosedEvent, contractAddress, contractABI)
     .then(() => console.log('Listening for OrderClosed events...'))
     .catch((error) => {

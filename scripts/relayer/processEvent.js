@@ -7,15 +7,15 @@ const constants = JSON.parse(fs.readFileSync(path.join(__dirname, 'constants.jso
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'credentials.json'), 'utf-8'));
 
 async function processOrderCreatedEvent(event) {
-    const { statementId, input, price } = event.args.orderInput;
+    const { statementId, publicInputs, price } = event.args.orderInput;
     const { id, buyer } = event.args;
-    console.log('Order created:', id, statementId, input, price, buyer);
+    console.log('Order created:', id, statementId, publicInputs, price, buyer);
 
     const order = {
         cost: Number(hre.ethers.utils.formatUnits(price)),
         statement_key: String(statementId),
-        input: String(input),
-        eth_id: String(id),     // TODO: make sure that new attributes are allowed
+        input: String(publicInputs),
+        eth_id: String(id),
     };
     console.log('Submitting order:', order);
 
@@ -37,9 +37,9 @@ async function processOrderCreatedEvent(event) {
 }
 
 async function processOrderClosedEvent(event) {
-    const orderId = event.args.orderId;
+    const orderId = event.args.id;
     console.log('Order closed:', orderId);
-    await updateOrderStatus(orderId, 'closed');
+    // await updateOrderStatus(orderId, 'closed');
 }
 
 async function updateOrderStatus(orderId, status) {
