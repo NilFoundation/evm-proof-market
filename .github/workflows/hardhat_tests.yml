@@ -4,16 +4,22 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
+
+concurrency:
+  group: ${{
+    ( github.ref == 'refs/heads/master' &&
+    format('{0}/{1}', github.run_id, github.run_attempt) )
+    ||
+    format('{0}/{1}', github.workflow, github.ref) }}
+  cancel-in-progress: true
 
 jobs:
   hardhat-tests:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, aws_autoscaling]
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Set up Node.js and install dependencies
-      run: ./scripts/setup.sh
-
-    - name: Run Hardhat tests
-      run: npx hardhat test
+      - name: Run Hardhat tests
+        run: ./scripts/ci.sh --docker hardhat_test

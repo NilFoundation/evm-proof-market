@@ -9,6 +9,11 @@ The repository uses Hardhat as a development environment for compilation, testin
 - [Hardhat](https://hardhat.org/)
 - [nodejs](https://nodejs.org/en/) >= 16.0
 
+## Installation
+```
+npm install
+```
+
 ## Compile
 ```
 npx hardhat compile

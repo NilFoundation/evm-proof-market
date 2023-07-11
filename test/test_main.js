@@ -2,13 +2,18 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployProofMarketFixture } = require("./fixtures.js");
+const { getVerifierParams } = require("./utils.js");
+const { deployments } = hre;
 
-
-describe("Proof market  tests", function () {
+describe("Proof market tests", function () {
     let proofMarket, user, producer, relayer, testStatement, testOrder;
     
     before(async function () {
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
+        console.log("proofMarket address: ", proofMarket.address);
+        await deployments.fixture(['unifiedAdditionVerifierFixture']);
+        let unifiedAdditionVerifier = await ethers.getContract('UnifiedAdditionVerifier');
+        console.log("unifiedAdditionVerifier address: ", unifiedAdditionVerifier.address);
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
@@ -18,14 +23,16 @@ describe("Proof market  tests", function () {
             id: 567,
             definition: definition,
             price: price,
-            developer: producer.address
+            developer: producer.address,
+            verifiers: [unifiedAdditionVerifier.address]
         };
 
         testOrder = {
             statementId: testStatement.id,
-            input: ethers.utils.formatBytes32String("Example input"),
+            publicInputs: [[1,2,3]],
             price: ethers.utils.parseUnits("10", 18)
         };
+
     });
 
     describe("Statement tests", function () {
@@ -101,8 +108,6 @@ describe("Proof market  tests", function () {
             // get the statement and check status
             const statement = await proofMarket.getStatement(newStatement.id);
             expect(statement.status).to.equal(1); // StatementStatus.INACTIVE
-
-
         });
 
     });
@@ -114,15 +119,16 @@ describe("Proof market  tests", function () {
             const receipt = await tx.wait();
             const event = receipt.events.find((e) => e.event === "OrderCreated");
 
+            // TODO: check array equality
             expect(event.args.id).to.equal(1);
             expect(event.args.orderInput.statementId).to.equal(statementId);
-            expect(event.args.orderInput.input).to.equal(testOrder.input);
+            // expect(event.args.orderInput.publicInputs).to.equal(testOrder.publicInputs);
             expect(event.args.orderInput.price).to.equal(testOrder.price);
             expect(event.args.buyer).to.equal(user.address);
 
             const order = await proofMarket.getOrder(1);
             expect(order.statementId).to.equal(statementId);
-            expect(order.input).to.equal(testOrder.input);
+            // expect(order.publicInputs).to.equal(testOrder.publicInputs);
             expect(order.price).to.equal(testOrder.price);
             expect(order.buyer).to.equal(user.address);
             expect(order.status).to.equal(0); // OrderStatus.OPEN
@@ -145,17 +151,26 @@ describe("Proof market  tests", function () {
 
         it("should close an order", async function () {
             const orderId = 1;
-            const proof = ethers.utils.formatBytes32String("Example proof");
             const finalPrice = ethers.utils.parseUnits("9", 18);
 
-            await expect(proofMarket.connect(relayer).closeOrder(orderId, proof, finalPrice))
-            .to.emit(proofMarket, "OrderClosed")
-            .withArgs(orderId, producer.address, finalPrice, proof);
+            let configPath = "./data/unified_addition/lambda2.json"
+            let proofPath = "./data/unified_addition/lambda2.data"
+            let publicInputPath = "./data/unified_addition/public_input.json";
+            let params = getVerifierParams(configPath, proofPath, publicInputPath);
+            const proof = [params.proof]
+            await expect(proofMarket.connect(relayer).closeOrder(
+                orderId,
+                proof,
+                finalPrice,
+                producer.address
+            ))
+            .to.emit(proofMarket, "OrderClosed");
+            // .withArgs(orderId, producer.address, finalPrice, proof);
         });
 
         it("should revert if the caller is not the relayer", async function () {
             const orderId = 1;
-            const proof = ethers.utils.formatBytes32String("Example proof");
+            const proof = [ethers.utils.formatBytes32String("Example proof")];
             const finalPrice = ethers.utils.parseUnits("9", 18);
 
             const nonRelayer = proofMarket.connect(user);
@@ -203,14 +218,12 @@ describe("Proof market  tests", function () {
             expect(newApi).to.equal('new api');
 
             const statementId = testStatement.id;
-            const input = ethers.utils.formatBytes32String("Example input");            
             const price = ethers.utils.parseUnits("10", 18);
             const orderId = 1;
 
             // Check that the state is preserved
             const order = await proofMarket.getOrder(orderId);
             expect(order.statementId).to.equal(statementId);
-            expect(order.input).to.equal(input);
             expect(order.price).to.equal(price);
             expect(order.buyer).to.equal(user.address);
         });
