@@ -77,19 +77,36 @@ npx hardhat node
 ```
 npx hardhat run scripts/deploy.js --network localhost
 ```
-3. Start the relayer:
+3. Submit a mina account statement:
 ```
-npx hardhat run --network localhost scripts/relayer.js
+npx hardhat run --network localhost scripts/addStatement.js
 ```
-4. Submit a statement:
+4. Start the relayer:
 ```
-npx hardhat run --network localhost scripts/interact.js
+npx hardhat run scripts/relayer/run.js
 ```
+This script will produce a bunch of cryptic outputs, but it for each createOrder execution it will print after about 30-60 seconds:
+`Order closed: BigNumber { _hex: <your order number>, _isBigNumber: true }`, which means that the order was successfully closed.
+
 5. Submit an order:
 ```
 npx hardhat run --network localhost scripts/createOrder.js
 ```
-6. Wait for the order to be completed:
-```
-npx hardhat run --network localhost scripts/trackOrder.js
-```
+
+### Important note
+Since there will be several people testing this thing, using the same instance of Proof Market, it is important to 
+- clear the database from time to time 
+    ```
+    for doc in request 
+    filter doc.sender == 'relayer'
+    remove doc in request
+    ```
+- or just create a new relayer for your testing (do not forget to register it as a proof producer and provide the ethereum address). Specify relayer's credentials in `scripts/relayer/credentials.json`
+
+## How to brake it
+1. Submit an order with predefined updatedOn field set to $\approx \infty$
+    - Make sure that users cannot submit orders with custom fields
+2. Now we are sloppy with addresses
+    - At least add a validation
+3. Make sure that invalid proof does not brake the workflow
+4. Make sure that some random exception allows seamless re-launch

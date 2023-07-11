@@ -16,12 +16,12 @@ async function main() {
     const proofMarket = ProofMarketEndpoint.attach(contractAddress);
 
     try {
-        const input = ethers.utils.formatBytes32String("Example input");
+        const input = [Array.from({length: 10}, () => Math.floor(Math.random() * 100))];
         const price = ethers.utils.parseUnits("10", 18);
-        const statementId = '32326';
+        const statementId = '79169223';
         const testOrder = {
             statementId: statementId,
-            input: input,
+            publicInputs: input,
             price: price
         };
 

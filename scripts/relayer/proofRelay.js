@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { ethers } = require("hardhat");
-const { getVerifierParams } = require("../../test/utils.js");
+const { getVerifierParams, getVerifierParamsAccount } = require("../../test/utils.js");
 
 let credentials, constants;
 
@@ -53,21 +53,14 @@ async function closeOrder(contract, relayer, order) {
             throw new Error(`Invalid order ID: ${order.eth_id}`);
         }
 
+        console.log(`Closing order ${order.eth_id} with proof ${proof_key}...`)
         let response = await getAuthenticated(`${constants.serviceUrl}/proof/${proof_key}`);
-        const bytes = ethers.utils.toUtf8Bytes(response.data.proof);
-        const proof = [ethers.utils.hexlify(bytes)];
-        const price = ethers.utils.parseUnits(order.cost.toString(), 18);
-        // console.log(proof, price);
-        // get order from service
-        // let configPath = "../test/data/unified_addition/lambda2.json"
-        // let proofPath = "../test/data/unified_addition/lambda2.data"
-        // let publicInputPath = "../test/data/unified_addition/public_input.json";
-        // let params = getVerifierParams(configPath,proofPath, publicInputPath);
+        const proof = [response.data.proof];
+        // const params = getVerifierParamsAccount();
         // const proof = [params.proof];
-        
-        // const eth_order = await contract.connect(relayer).getOrder(id);
-        // console.log(eth_order);
-        return contract.connect(relayer).closeOrder(id, proof, price);
+        const price = ethers.utils.parseUnits(order.cost.toString(), 18);
+        // console.log(proof, id, price);
+        return contract.connect(relayer).closeOrder(id, proof, price, {gasLimit: 30_500_000});
     } catch (error) {
         console.error(`Error processing order ${order.eth_id}:`, error);
     }
@@ -105,6 +98,9 @@ async function relayProofs(contract, relayer) {
         const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await getAuthenticated(url);
         const orders = response.data;
+        if (orders.length === 0) {
+            return;
+        }
         console.log(`Relaying ${orders.length} proofs...`)
         console.log(orders);
         const closeOrderPromises = orders.map(order => closeOrder(contract, relayer, order));
@@ -113,7 +109,7 @@ async function relayProofs(contract, relayer) {
 
         const maxTimestamp = orders.length > 0 ? Math.max(...orders.map(order => order.updatedOn)) : 0;
         if (maxTimestamp > 0) {
-            await saveLastProcessedTimestamp('completed', 0);
+            await saveLastProcessedTimestamp('completed', maxTimestamp);
         }
     } catch (error) {
         console.error("Failed to relay proofs:", error);
@@ -135,10 +131,29 @@ async function relayStatuses(contract, relayer) {
 
         const url = `${constants.serviceUrl}/request?q=${JSON.stringify(pattern)}`;
         const response = await getAuthenticated(url);
-        console.log(response.data);
+        // console.log(response.data);
         const orders = response.data;
+        if (orders.length === 0) {
+            return;
+        }
+        console.log(`Relaying ${orders.length} statuses...`)
+        console.log(orders);
 
-        const setProducerPromises = response.data.map(order => setProducer(contract, relayer, order));
+        const setProducerPromises = orders.map(async (order) => {
+            // TODO: remove this by setting relayerFetched flag
+            try {
+                return await setProducer(contract, relayer, order);
+            } catch (error) {
+                if (error.message.includes("Order is not open")) {
+                    console.log(`Order ${order.eth_id} is not open. Skipping...`);
+                } else {
+                    console.error(`Error processing order ${order.eth_id}:`, error);
+                }
+                return null;
+            }
+        
+        });
+
         const results = await Promise.all(setProducerPromises);
         results.forEach(result => console.log(result));
         const maxTimestamp = orders.length > 0 ? Math.max(...orders.map(order => order.updatedOn)) : 0;
@@ -166,7 +181,7 @@ async function main() {
 
     while (true) {
         await relayProofs(proofMarket, relayer);
-        // await relayStatuses(proofMarket, relayer);
+        await relayStatuses(proofMarket, relayer);
         await delay(10000);
     }
 }

@@ -6,6 +6,7 @@ const { processOrderCreatedEvent, processOrderClosedEvent }  = require('./proces
 async function main() {
     const contractArtifact = await hre.artifacts.readArtifact('ProofMarketEndpoint');
     const contractABI = contractArtifact.abi;
+    console.log('Contract ABI:', contractABI);
     const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
     const contractAddress = addresses.proofMarket;
 
