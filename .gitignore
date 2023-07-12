@@ -251,3 +251,6 @@ contracts/profiling.sol
 # Hardhat files
 cache
 artifacts
+
+#ide
+.idea

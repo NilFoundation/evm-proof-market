@@ -50,7 +50,7 @@ library OrderLibrary {
     }
 
     function get(OrderStorage storage self, uint256 id) internal view returns (Order storage) {
-        require(id > 0 && id <= self.orderCounter, "Order not found");
+        require(id <= self.orderCounter, "Order not found");
         return self.orders[id];
     }
 

@@ -3,7 +3,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function deployProofMarketFixture() {
     const ProofMarket = await ethers.getContractFactory("ProofMarketEndpoint");
-	const ERC20 = await ethers.getContractFactory("MockTocken");
+	const ERC20 = await ethers.getContractFactory("MockToken");
 
     let [owner, user, producer, relayer] = await ethers.getSigners();
 

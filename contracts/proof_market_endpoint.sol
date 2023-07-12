@@ -154,7 +154,7 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
 
     function removeStatement(uint256 id)
         public
-        onlyRole(OWNER_ROLE)
+        onlyRole(RELAYER_ROLE)
     {
         statementStorage.remove(id);
         emit StatementRemoved(id);
