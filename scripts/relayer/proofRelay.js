@@ -2,7 +2,6 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const { ethers } = require("hardhat");
-const { getVerifierParams, getVerifierParamsAccount } = require("../../test/utils.js");
 
 let credentials, constants;
 
@@ -46,6 +45,9 @@ async function saveLastProcessedTimestamp(status, timestamp) {
 
 async function closeOrder(contract, relayer, order) {
     try {
+        // TODO: relay statuses independently
+        await setProducer(contract, relayer, order);
+        
         const id = parseInt(order.eth_id);
         const proof_key = order.proof_key;
 
@@ -56,10 +58,7 @@ async function closeOrder(contract, relayer, order) {
         console.log(`Closing order ${order.eth_id} with proof ${proof_key}...`)
         let response = await getAuthenticated(`${constants.serviceUrl}/proof/${proof_key}`);
         const proof = [response.data.proof];
-        // const params = getVerifierParamsAccount();
-        // const proof = [params.proof];
         const price = ethers.utils.parseUnits(order.cost.toString(), 18);
-        // console.log(proof, id, price);
         return contract.connect(relayer).closeOrder(id, proof, price, {gasLimit: 30_500_000});
     } catch (error) {
         console.error(`Error processing order ${order.eth_id}:`, error);
@@ -78,7 +77,7 @@ async function setProducer(contract, relayer, order) {
         if (producerAddress === null) {
             producerAddress = relayer.address;
         }
-
+        console.log('Setting producer', producerAddress, 'for order', id, '...');
         return contract.connect(relayer).setProducer(id, producerAddress);
 
     } catch (error) {
@@ -181,7 +180,7 @@ async function main() {
 
     while (true) {
         await relayProofs(proofMarket, relayer);
-        await relayStatuses(proofMarket, relayer);
+        // await relayStatuses(proofMarket, relayer);
         await delay(10000);
     }
 }

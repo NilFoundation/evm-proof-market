@@ -27,6 +27,8 @@ async function saveLastProcessedBlock(eventName, blockNumber) {
     }
 }
 
+let reconnecting = false;
+
 async function setupEventListener(eventName, processEventFunc, contractAddress, contractABI) {
     const provider = hre.ethers.provider;
     const contract = new hre.ethers.Contract(contractAddress, contractABI, provider);
@@ -46,15 +48,25 @@ async function setupEventListener(eventName, processEventFunc, contractAddress, 
         await saveLastProcessedBlock(eventName, lastProcessedBlock);
     });
 
-    provider.on('end', async () => {
-        console.log('Connection ended. Trying to reconnect...');
-        await setupEventListener(contractAddress, contractABI);
-    });
+    provider.on('error', async (error) => {
+        console.log('Connection error:', error.message, '. Trying to reconnect...');
+        if (!reconnecting) {
+            console.log('Trying to reconnect...');
+            await handleConnectionError(eventName, processEventFunc, contractAddress, contractABI);
+        }
+    });  
+}
 
-    provider.on('error', async () => {
-        console.log('Connection error. Trying to reconnect...');
-        await setupEventListener(contractAddress, contractABI);
-    });
+async function handleConnectionError(eventName, processEventFunc, contractAddress, contractABI) {
+    const provider = hre.ethers.provider;
+    const waitTime = 10 * 1000; // 10 seconds
+    console.log(`Waiting for ${waitTime / 1000} seconds before retrying...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+    console.log(`Attempting to reconnect...`);
+    reconnecting = true;
+    provider.removeAllListeners();
+    await setupEventListener(eventName, processEventFunc, contractAddress, contractABI);
+    reconnecting = false;
 }
 
 module.exports = setupEventListener;
