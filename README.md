@@ -49,7 +49,10 @@ These requirements must be met:
 - Length of the gap arrays must be descreased so the storage layout is preserved
 
 ## Usage
-TODO
+```
+node scripts/interact.js -h
+```
+
 
 ## Events
 

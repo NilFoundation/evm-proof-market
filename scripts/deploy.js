@@ -17,7 +17,7 @@ async function main() {
     };
     fs.writeFileSync('deployed_addresses.json', JSON.stringify(addresses, null, 2));
 }
-    
+
 main()
 .then(() => process.exit(0))
 .catch((error) => {

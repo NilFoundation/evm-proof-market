@@ -1,57 +1,43 @@
-
-const hre = require("hardhat");
-const ethers = hre.ethers;
+const { ethers } = require("ethers");
 const fs = require('fs');
+const path = require('path');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 
-async function main() {
-    const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
-    const tokenAddress = addresses.token;
-    const contractAddress = addresses.proofMarket;
+const buildDir = path.join(__dirname, '../artifacts/contracts');
+const MockTokenJSON = JSON.parse(fs.readFileSync(`${buildDir}/test/mock_erc20_contract.sol/MockTocken.json`, 'utf8'));
+const MockTokenABI = MockTokenJSON.abi;
+const ProofMarketEndpointJSON = JSON.parse(fs.readFileSync(`${buildDir}/proof_market_endpoint.sol/ProofMarketEndpoint.json`, 'utf8'));
+const ProofMarketEndpointABI = ProofMarketEndpointJSON.abi;
 
-    const [owner, user, producer, relayer] = await ethers.getSigners();
+const validStatementIds = ['79169223']
 
-    const MockToken = await hre.ethers.getContractFactory("MockTocken"); // Replace 'MockTocken' with the actual name of your token contract
-    const token = MockToken.attach(tokenAddress);
+const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
+const tokenAddress = addresses.token;
+const proofMarketAddress = addresses.proofMarket;
 
-    const ProofMarketEndpoint = await hre.ethers.getContractFactory("ProofMarketEndpoint");
-    const proofMarket = ProofMarketEndpoint.attach(contractAddress);
-
-    console.log("User address:", user.address);
-    const balance = await token.balanceOf(user.address);
-    console.log("User balance:", ethers.utils.formatUnits(balance, 18));
-
-    // add a statement
-    const statementId = Math.floor(Math.random() * 1000000);
+async function createOrder(privateKey, statementId, price, inputFile, providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const signer = new ethers.Wallet(privateKey, provider);
+    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, signer);
     try {
-        const definition = {
-            verificationKey: ethers.utils.formatBytes32String("Example verification key"),
-            provingKey: ethers.utils.formatBytes32String("Example proving key")
-        };
-        const price = { price: 100 };
-        const testStatement = {id: statementId, definition: definition, price: price, developer: producer.address };
-        const tx = await proofMarket.connect(relayer).addStatement(testStatement);
-        const receipt = await tx.wait();
-        const event = receipt.events.find((e) => e.event === "StatementAdded");
-        console.log('Statement added successfully: id ', event.args.id);
-    } catch (error) {
-        if (error.message.includes('Statement already exists')) {
-            console.error('Error: Statement already exists');
+        let input = JSON.parse(fs.readFileSync(inputFile, 'utf-8'));
+        if (statementId == '79169223') {
+            input = input[0].array;
+            input = [input.map((item) => ethers.BigNumber.from(item))];
         } else {
-            console.error('Unexpected error:', error);
+            console.error('Invalid statement ID');
+            return;
         }
-    }
-
-    // add an order
-    try {
-        const input = ethers.utils.formatBytes32String("Example input");            
-        const price = ethers.utils.parseUnits("10", 18);
+        const parsedPrice = ethers.utils.parseUnits(price, 18);
         const testOrder = {
             statementId: statementId,
-            input: input,
-            price: price
+            publicInputs: input,
+            price: parsedPrice
         };
+        console.log('Creating order:', testOrder);
 
-        const tx = await proofMarket.connect(user).createOrder(testOrder);
+        const tx = await proofMarket.createOrder(testOrder);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "OrderCreated");
         console.log('Order created successfully: id ', event.args.id);
@@ -64,10 +50,120 @@ async function main() {
     }
 }
 
+async function mintAndApprove(privateKey, providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const signer = new ethers.Wallet(privateKey, provider);
+    const token = new ethers.Contract(tokenAddress, MockTokenABI, signer);
+    try {
+        const tx = await token.mint(signer.address, ethers.utils.parseUnits("1000000", 18));
+        const receipt = await tx.wait();
+        console.log('Minted 1000000 tokens to ', signer.address);
 
-main()
-.then(() => process.exit(0))
-.catch((error) => {
-    console.error(error);
-    process.exit(1);
-});
+        const tx2 = await token.connect(signer).approve(proofMarketAddress, ethers.utils.parseUnits("1000000", 18));
+        const receipt2 = await tx2.wait();
+        console.log('Approved ', proofMarketAddress, ' to spend 1000000 tokens');
+
+        const balance = await token.balanceOf(signer.address);
+        console.log('Balance: ', balance.toString());
+        
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function getPrice(statementId, providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+    try {
+        const statement = await proofMarket.getStatement(statementId);
+        const orderBook = statement.price.orderBook;
+        const prices = orderBook.map((item) => item.toString());
+        console.log('Order book for statement ', statementId, ': ', prices);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+const argv = yargs(hideBin(process.argv))
+    .option('providerUrl', {
+        type: 'string',
+        description: 'Provider URL',
+        default: 'http://localhost:8545',
+    })
+    .command(
+        'createOrder', 
+        'Create a new order', 
+        {
+        statementId: {
+            type: 'string',
+            demandOption: true,
+            describe: 'Statement ID for the order',
+            choices: validStatementIds,
+        },
+        price: {
+            type: 'string',
+            demandOption: true,
+            describe: 'Price for the order',
+        },
+        inputFile: {
+            type: 'string',
+            demandOption: true,
+            describe: 'Input file for the order',
+        },
+        pk: {
+            type: 'string',
+            demandOption: true,
+            describe: 'Private key',
+        },
+        },
+        (argv) => {
+            createOrder(argv.pk, argv.statementId, argv.price, argv.inputFile, argv.providerUrl)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .command(
+        'mintAndApprove',
+        'Mint and approve tokens',
+        {
+            pk: {
+                type: 'string',
+                demandOption: true,
+                describe: 'Private key',
+            },
+        },
+        (argv) => {
+            mintAndApprove(argv.pk, argv.providerUrl)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .command(
+        'getPrice',
+        'Get price for a statement',
+        {
+            statementId: {
+                type: 'string',
+                demandOption: true,
+                describe: 'Statement ID for the order',
+                choices: validStatementIds,
+            },
+        },
+        async (argv) => {
+            getPrice(argv.statementId, argv.providerUrl)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .demandCommand(1, 'You need to specify a command')
+    .help()
+    .argv;
