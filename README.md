@@ -49,8 +49,48 @@ These requirements must be met:
 - Length of the gap arrays must be descreased so the storage layout is preserved
 
 ## Usage
+Compile the contracts before interacting with them to make sure the ABI files are present:
+```
+npx hardhat compile
+```
+Get a list of the available commands:
 ```
 node scripts/connect.js -h
+```
+
+### Flags
+
+`providerUrl`:
+This flag is used to specify the URL of the Ethereum provider that will be used to interact with the Ethereum network.
+If not specified, it defaults to 'http://localhost:8545'.
+
+`statementId`:
+This flag is used to specify the statement ID when creating a new order or getting the price of a statement.
+
+`price`:
+This flag is used to specify the price of the order when creating a new order.
+
+`inputFile`:
+This flag is used to specify the file path of the input file when creating a new order.
+It should be a JSON file in the suitable for the statement format.
+
+`pk` (Private Key):
+This flag is used to specify the private key of the Ethereum address that will be used to sign transactions.
+
+### Mint and approve tokens
+```
+node scripts/connect.js mintAndApprove --pk <privateKey> --providerUrl <providerUrl>
+```
+This command will mint sufficient for testing ERC20 tokens and approve the smart contracts to spend them.
+
+### Get the price of a statement
+```
+node scripts/connect.js getPrice --statementId <statementId> --providerUrl <providerUrl>
+```
+
+### Create a new order
+```
+node scripts/connect.js createOrder --statementId <statementId> --price <price> --inputFile <inputFilePath> --pk <privateKey> --providerUrl <providerUrl>
 ```
 
 
