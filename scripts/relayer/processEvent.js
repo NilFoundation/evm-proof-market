@@ -11,6 +11,7 @@ async function processOrderCreatedEvent(event) {
     const { id, buyer } = event.args;
     console.log('Order created:', id, statementId, publicInputs, price, buyer);
 
+    // TODO: process inputs before sending to PM
     const order = {
         cost: Number(hre.ethers.utils.formatUnits(price)),
         statement_key: String(statementId),

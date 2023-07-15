@@ -14,19 +14,16 @@ async function main() {
     const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
     const contractAddress = addresses.proofMarket;
 
-    await Promise.all([
-        setupEventListener('OrderCreated', processOrderCreatedEvent, contractAddress, contractABI)
-            .then(() => console.log('Listening for OrderCreated events...'))
-            .catch((error) => { 
-                console.error("Error setting up OrderCreated listener:", error);
-            }),
-        setupEventListener('OrderClosed', processOrderClosedEvent, contractAddress, contractABI)
-            .then(() => console.log('Listening for OrderClosed events...'))
-            .catch((error) => {
-                console.error("Error setting up OrderClosed listener:", error);
-            })
-    ]);
+    const eventProcessingDescriptors = [
+        {eventName: 'OrderCreated', processEventFunc: processOrderCreatedEvent},
+        {eventName: 'OrderClosed', processEventFunc: processOrderClosedEvent},
+    ];
 
+    await setupEventListener(eventProcessingDescriptors, contractAddress, contractABI)
+        .then(() => console.log('Listening for events...'))
+        .catch((error) => { 
+            console.error("Error setting up listeners:", error);
+    });
 }
 
 main();
