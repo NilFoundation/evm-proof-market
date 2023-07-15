@@ -50,7 +50,7 @@ These requirements must be met:
 
 ## Usage
 ```
-node scripts/interact.js -h
+node scripts/connect.js -h
 ```
 
 
