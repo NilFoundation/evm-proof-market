@@ -6,6 +6,7 @@ const { ethers } = require("hardhat");
 const credentials = JSON.parse(fs.readFileSync(path.join(__dirname, 'credentials.json'), 'utf-8'));
 const constants = JSON.parse(fs.readFileSync(path.join(__dirname, 'constants.json'), 'utf-8'));
 
+const validStatementIds = ['32326'];
 
 async function relayPrices(contract, relayer) {
     try {
@@ -20,17 +21,19 @@ async function relayPrices(contract, relayer) {
         console.log(response.data[0]);
         for (let statBook of response.data) {
             const statementId = statBook.statement_key;
-            console.log('Relaying price for statement:', statBook.name, statementId);
-            const prices = {bid: [], ask: []};
-            for (let bid of statBook.bids) {
-                prices.bid.push(bid.cost);
+            if (!validStatementIds.includes(statementId)) {
+                continue;
             }
-            for (let ask of statBook.asks) {
-                prices.ask.push(ask.cost);
+            console.log('Relaying price for statement:', statBook.name, statementId);
+            let prices = [[], []];
+            for (let request of statBook.requests) {
+                prices[0].push(request.cost);
+            }
+            for (let proposal of statBook.proposals) {
+                prices[1].push(proposal.cost);
             }
             console.log(prices);
             try {
-                // TODO: change format of prices to match what the contract expects
                 const result = await contract.connect(relayer).updateStatementPrice(statementId, prices);
                 console.log(result);
             } catch (error) {

@@ -7,6 +7,7 @@ import { Tools } from "../libraries/tools.sol";
 
 interface IProofMarketEndpoint {
     event OrderCreated(uint256 indexed id, OrderLibrary.OrderInput orderInput, address buyer);
+    event OrderProcessing(uint256 id, address producer);
     event OrderClosed(uint256 indexed id, address producer, uint256 finalPrice, bytes32 proofHash);
     // TODO: emit structs properly
     event StatementAdded(uint256 id, StatementLibrary.Definition definition);
@@ -20,7 +21,8 @@ interface IProofMarketEndpoint {
 
     function getOrder(uint256 orderId) external view returns (OrderLibrary.Order memory);
     function createOrder(OrderLibrary.OrderInput memory orderInput) external returns (uint256);
-    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice, address producer) external;
+    function setProducer(uint256 orderId, address producer) external;
+    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice) external;
 
     function getStatement(uint256 id) external view returns (StatementLibrary.StatementData memory);
     function addStatement(StatementLibrary.StatementInput memory statementInput) external;

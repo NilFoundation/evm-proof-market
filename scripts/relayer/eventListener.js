@@ -2,52 +2,74 @@ const hre = require('hardhat');
 const fs = require('fs');
 const path = require('path');
 
-async function getLastProcessedBlock(eventName) {
+const blockNumberFilePath = path.join(__dirname, 'lastProcessedBlock.json');
+
+async function getLastProcessedBlock() {
     try {
-        const data = fs.readFileSync(path.join(__dirname, `${eventName}_lastBlock.json`), 'utf-8');
+        if (!fs.existsSync(blockNumberFilePath)) {
+            fs.writeFileSync(blockNumberFilePath, '0');
+            return 0;
+        }
+        const data = fs.readFileSync(blockNumberFilePath, 'utf-8');
         return Number(data);
     } catch (error) {
-        console.error(`Failed to get last processed block for event ${eventName}:`, error);
+        console.error('Failed to get last processed block:', error);
         return 0;
     }
 }
 
-async function saveLastProcessedBlock(eventName, blockNumber) {
+async function saveLastProcessedBlock(blockNumber) {
     try {
-        fs.writeFileSync(path.join(__dirname, `${eventName}_lastBlock.json`), String(blockNumber));
+        fs.writeFileSync(blockNumberFilePath, String(blockNumber));
     } catch (error) {
-        console.error(`Failed to save last processed block for event ${eventName}:`, error);
+        console.error('Failed to save last processed block:', error);
     }
 }
 
-async function setupEventListener(eventName, processEventFunc, contractAddress, contractABI) {
+async function setupEventListener(eventProcessingDescriptors, contractAddress, contractABI) {
     const provider = hre.ethers.provider;
     const contract = new hre.ethers.Contract(contractAddress, contractABI, provider);
 
-    let lastProcessedBlock = await getLastProcessedBlock(eventName);
+    let lastProcessedBlock = await getLastProcessedBlock();
+
+    const network = await provider.getNetwork();
+    console.log(`Connected to ${network.name} network`);
 
     provider.on('block', async (blockNumber) => {
         if (blockNumber <= lastProcessedBlock) return;
 
-        const events = await contract.queryFilter(eventName, lastProcessedBlock + 1, blockNumber);
+        for (let descriptor of eventProcessingDescriptors) {
+            const events = await contract.queryFilter(descriptor.eventName, lastProcessedBlock + 1, blockNumber);
 
-        for (let event of events) {
-            await processEventFunc(event);
+            for (let event of events) {
+                await descriptor.processEventFunc(event);
+            }
         }
 
         lastProcessedBlock = blockNumber;
-        await saveLastProcessedBlock(eventName, lastProcessedBlock);
+        await saveLastProcessedBlock(lastProcessedBlock);
     });
 
-    provider.on('end', async () => {
-        console.log('Connection ended. Trying to reconnect...');
-        await setupEventListener(contractAddress, contractABI);
+    provider.on('error', async (error) => {
+        console.log('Connection error:', error.message, '. Trying to reconnect...');
+        await handleConnectionError(eventProcessingDescriptors, contractAddress, contractABI);
     });
 
-    provider.on('error', async () => {
-        console.log('Connection error. Trying to reconnect...');
-        await setupEventListener(contractAddress, contractABI);
-    });
+    console.log('Total listeners:', provider.listenerCount('block'));
 }
+
+async function handleConnectionError(eventProcessDescriptors, contractAddress, contractABI) {
+    const provider = hre.ethers.provider;
+    const waitTime = 10 * 1000; // 10 seconds
+    console.log(`Waiting for ${waitTime / 1000} seconds before retrying...`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+    
+    console.log('Removing all listeners...');
+    provider.removeAllListeners();
+    
+    console.log('Attempting to reconnect...');
+    await setupEventListener(eventProcessDescriptors, contractAddress, contractABI);
+}
+
 
 module.exports = setupEventListener;

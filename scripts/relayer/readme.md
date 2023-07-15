@@ -20,3 +20,11 @@
     - We need to listen to them and send corresponding requests to Proof Market
 2. Information aggregation
     - Relayer can also listen to `OrderCompleted`, `VerificationFailed` events and store this info in the dbms cluster and make it easily accessible 
+
+
+## Current simplifications
+- Statement prices are just sorted request/proposal prices for the statement (can easily switch it to anything else)
+- Relay of statuses is not working independently from proof relay
+    - This simplification is added to avoid concurrent complexity and ease debugging
+- Public_input transfer from evm PM `uint256[]` format to PM format is not working
+    - For now transfer mina account as is, but for mina state substitue public_input with a valid default one

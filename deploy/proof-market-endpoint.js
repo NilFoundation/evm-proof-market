@@ -1,37 +1,35 @@
-const hre = require('hardhat')
-const {deployments, getNamedAccounts} = hre;
-const {deploy} = deployments;
+const { ethers, upgrades } = require("hardhat");
+const {deployments, getNamedAccounts} = require('hardhat');
 
 module.exports = async function() {
-    const {deployer, tokenOwner, user, producer, relayer} = await getNamedAccounts();
+    // const {deployer, tokenOwner, user, producer, relayer} = await getNamedAccounts();
+    // const { deployProxy } = upgrades;
 
-    await deploy('MockTocken', {
-        from: tokenOwner,
-        args: [],
-        log: true,
-    })
-    let token = await ethers.getContract('MockTocken');
-    await deployments.fixture(['placeholderVerifierFixture']);
-    let placeholder_verifier = await ethers.getContract('PlaceholderVerifier');
+    // console.log("tokenOwner: ", tokenOwner);
 
-    let libs = [
-    ]
-    let deployedLib = {}
-    for (let lib of libs){
-        await deploy(lib, {
-            from: deployer,
-            log: true,
-        });
-        deployedLib[lib] = (await hre.deployments.get(lib)).address
-    }
+    // await deployments.deploy('MockTocken', {
+    //     from: tokenOwner,
+    //     args: [],
+    //     log: true,
+    // });
 
-    await deploy('ProofMarketEndpoint', {
-        from: deployer,
-        args: [token.address, placeholder_verifier.address],
-        libraries : deployedLib,
-        log : true,
-    })
-    // TODO: Set the roles and mint some tokens
+    // let token = await ethers.getContract('MockTocken');
+    // console.log("Token address: ", token.address);
+
+    // const ProofMarketEndpoint = await ethers.getContractFactory('ProofMarketEndpoint');
+    // const proofMarket = await deployProxy(ProofMarketEndpoint, [token.address]);
+    // await proofMarket.deployed();
+
+
+    // console.log("ProofMarketEndpoint address: ", proofMarket.address);
+
+    // await proofMarket.grantRole(ethers.utils.id('RELAYER_ROLE'), relayer);
+    // // Mint some tokens to the user
+    // const initialBalance = ethers.utils.parseUnits("1000", 18);
+    // await token.mint(user, initialBalance);
+    // // Approve the contract to spend the user's tokens
+    // const TokenAsUser = token.connect(ethers.provider.getSigner(user));
+    // await TokenAsUser.approve(proofMarket.address, initialBalance);
 }
 
 module.exports.tags = ['proofMarketEndpointFixture']

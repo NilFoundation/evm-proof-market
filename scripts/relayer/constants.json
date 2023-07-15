@@ -1,3 +1,4 @@
 {
-    "serviceUrl": "http://127.0.0.1:8529/_db/market/test"
+    "serviceUrl": "https://api.proof-market.dev.nil.foundation/_db/market/v0_0",
+    "cursorUrl": "https://api.proof-market.dev.nil.foundation/_db/market/_api/cursor"
 }

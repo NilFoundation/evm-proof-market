@@ -18,7 +18,7 @@ describe("Proof market tests", function () {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
         };
-        price = { price: 100 };
+        price = { orderBook: [[100], [100]] };
         testStatement = {
             id: 567,
             definition: definition,
@@ -54,10 +54,6 @@ describe("Proof market tests", function () {
             .to.equal(testStatement.definition.verificationKey);
             expect(statement.definition.provingKey)
             .to.equal(testStatement.definition.provingKey);
-            expect(statement.price.price)
-            .to.equal(testStatement.price.price);
-            expect(statement.verifier)
-            .to.equal(testStatement.verifier);
         });
 
         it("should revert if the caller is not the relayer", async function () {
@@ -79,7 +75,7 @@ describe("Proof market tests", function () {
                 verificationKey: ethers.utils.formatBytes32String("Updated verification key"),
                 provingKey: ethers.utils.formatBytes32String("Updated proving key")
             }
-            const updatedPrice = { price: 200 };
+            const updatedPrice = { orderBook: [[100], [100]] };
 
             await expect(proofMarket.connect(relayer)
             .updateStatementDefinition(statementId, updatedDefinition))
@@ -93,7 +89,11 @@ describe("Proof market tests", function () {
             expect(statement.id).to.equal(statementId);
             expect(statement.definition.verificationKey).to.equal(updatedDefinition.verificationKey);
             expect(statement.definition.provingKey).to.equal(updatedDefinition.provingKey);
-            expect(statement.price.price).to.equal(updatedPrice.price);
+            for (let i = 0; i < statement.price.orderBook.length; i++) {
+                for (let j = 0; j < statement.price.orderBook[i].length; j++) {
+                    expect(statement.price.orderBook[i][j]).to.equal(updatedPrice.orderBook[i][j]);
+                }
+            }
         });
 
         it("should remove a statement", async function () {
@@ -142,6 +142,13 @@ describe("Proof market tests", function () {
             .to.be.revertedWith("Statement does not exist or is inactive");
         });
 
+        it("should set producer", async function () {
+            const orderId = 1;
+            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            .to.emit(proofMarket, "OrderProcessing")
+            .withArgs(orderId, producer.address);
+        });
+
         it("should close an order", async function () {
             const orderId = 1;
             const finalPrice = ethers.utils.parseUnits("9", 18);
@@ -154,8 +161,7 @@ describe("Proof market tests", function () {
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,
-                finalPrice,
-                producer.address
+                finalPrice
             ))
             .to.emit(proofMarket, "OrderClosed");
             // .withArgs(orderId, producer.address, finalPrice, proof);
@@ -168,7 +174,7 @@ describe("Proof market tests", function () {
 
             const nonRelayer = proofMarket.connect(user);
 
-            await expect(nonRelayer.closeOrder(orderId, proof, finalPrice, producer.address))
+            await expect(nonRelayer.closeOrder(orderId, proof, finalPrice))
             .to.be.revertedWith(/AccessControl/);
         });
     });

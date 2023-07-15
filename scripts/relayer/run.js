@@ -3,13 +3,13 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const scripts = [
-    path.join(__dirname, 'priceRelay.js'),
+    // path.join(__dirname, 'priceRelay.js'),
     path.join(__dirname, 'orderRelay.js'),
     path.join(__dirname, 'proofRelay.js')
 ];
 
 function runScript(script) {
-    const child = spawn('node', [script]);
+    const child = spawn('npx', ['hardhat', 'run', '--network', 'localhost', script]);
 
     child.stdout.on('data', (data) => {
         console.log(`Output from ${script}: ${data}`);

@@ -83,7 +83,15 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         return id;
     }
 
-    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice, address producer)
+    function setProducer(uint256 orderId, address producer)
+        public
+        onlyRole(RELAYER_ROLE)
+    {
+        orderStorage.setProducer(orderId, producer);
+        emit OrderProcessing(orderId, producer);
+    }
+
+    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice)
         public
         onlyRole(RELAYER_ROLE)
     {
@@ -104,7 +112,9 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
             proofHashes[i] = Tools.hashProof(proofs[i]);
         }
         bytes32 proofHash = Tools.hashProofs(proofHashes);
+        orderStorage.close(orderId, finalPrice, proofHash);
 
+        address producer = order.producer;
         require(token.transfer(producer, finalPrice), "Token transfer to producer failed");
         uint256 remainingTokens = order.price - finalPrice;
         require(token.transfer(order.buyer, remainingTokens), "Token transfer to buyer failed");

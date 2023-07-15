@@ -21,7 +21,21 @@ module.exports = {
     },
   },
   namedAccounts: {
-    deployer: 0,
+    deployer: {
+      default: 0,
+    },
+    tokenOwner: {
+      default: 1,
+    },
+    user: {
+      default: 2,
+    },
+    producer: {
+      default: 3,
+    },
+    relayer: {
+      default: 4,
+    }
   },
   mocha: {
     timeout: 100000000
