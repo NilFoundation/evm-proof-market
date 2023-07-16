@@ -4,7 +4,7 @@ const fs = require('fs');
 async function main() {
     const { proofMarket, token, owner, user, producer, relayer } = await deployProofMarketFixture();
 
-    console.log('MockTocken deployed to:', token.address);
+    console.log('MockToken deployed to:', token.address);
     console.log('ProofMarketEndpoint deployed to:', proofMarket.address);
     console.log('Owner:', owner.address);
     console.log('User:', user.address);

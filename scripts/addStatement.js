@@ -10,7 +10,7 @@ async function main() {
 
     const [owner, user, producer, relayer] = await ethers.getSigners();
 
-    const MockToken = await hre.ethers.getContractFactory("MockTocken"); // Replace 'MockTocken' with the actual name of your token contract
+    const MockToken = await hre.ethers.getContractFactory("MockToken");
     const token = MockToken.attach(tokenAddress);
 
     const ProofMarketEndpoint = await hre.ethers.getContractFactory("ProofMarketEndpoint");
