@@ -103,18 +103,6 @@ node scripts/interact.js createKeystoreFromPrivateKey --pk <privateKey> --passwo
 ```
 
 
-## Events
-
-To listen to events emitted by the smart contracts, you can use the following command:
-```
-npx hardhat run --network <network> scripts/trackEvents.js
-```
-
-To generate some events, you can use the following command:
-```
-npx hardhat run --network <network> scripts/interact.js
-```
-
 ## Testing
 
 There is a testing dbms instance running on https://api.proof-market.dev.nil.foundation/.
@@ -129,18 +117,14 @@ npx hardhat node
 ```
 npx hardhat run scripts/deploy.js --network localhost
 ```
-3. Submit a mina account statement:
-```
-npx hardhat run --network localhost scripts/addStatement.js
-```
-4. Start the relayer:
+3. Start the relayer:
 ```
 npx hardhat run scripts/relayer/run.js
 ```
 This script will produce a bunch of cryptic outputs, but it for each createOrder execution it will print after about 30-60 seconds:
 `Order closed: BigNumber { _hex: <your order number>, _isBigNumber: true }`, which means that the order was successfully closed.
 
-5. Submit an order:
+4. Submit an order:
 ```
 npx hardhat run --network localhost scripts/createOrder.js
 ```

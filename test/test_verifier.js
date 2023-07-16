@@ -74,7 +74,9 @@ describe('Proof validation tests', function () {
             );
             await tx.wait();
             
-            // TODO: set public input
+            let params = getVerifierParamsAccount();
+            testOrder.publicInputs = [params.public_inputs];
+
             tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const orderCreatedEvent = receipt.events.find(
@@ -86,7 +88,6 @@ describe('Proof validation tests', function () {
             .to.emit(proofMarket, "OrderProcessing")
             .withArgs(orderId, producer.address);
             
-            let params = getVerifierParamsAccount();
             const proof = [params.proof];
   
             await expect(proofMarket.connect(relayer).closeOrder(
@@ -102,19 +103,17 @@ describe('Proof validation tests', function () {
     describe('Mina State Proof', function () {
         it("Should verify correct proof", async function () {
             let params = getVerifierParamsState();
-            await deployments.fixture(['minaStateProofScalarBaseVerifiersFixture']);
-            // let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
-            let minaStateBaseVerifier = await ethers.getContract('MinaStateBaseVerifier');
-            let minaStateScalarVerifier = await ethers.getContract('MinaStateScalarVerifier');
+            await deployments.fixture(['minaStateProofVerifierFixture']);
+            let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
 
             let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
                 testStatement.id,
-                [minaStateBaseVerifier.address, minaStateScalarVerifier.address]
+                [minaStateProofVerifier.address]
             );
             await tx.wait();
-            
+
             // TODO: set public input
-            testOrder.publicInputs = [[1,2,3], [4,5,6]];
+            testOrder.publicInputs = [[1, 2, 3]];
             tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const orderCreatedEvent = receipt.events.find(
@@ -122,16 +121,14 @@ describe('Proof validation tests', function () {
             );
             const orderId = orderCreatedEvent.args.id;
 
-            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            await expect(proofMarket.connect(relayer).setProducer(
+                orderId,
+                producer.address,
+                {gasLimit: 30_500_000}))
             .to.emit(proofMarket, "OrderProcessing")
             .withArgs(orderId, producer.address);
-            
-            const size1 = params.init_params[0][0];
-            const size2 = params.init_params[0][1];
-            const proof = [
-                '0x' + params.proof.slice(2, 2 + 2 * size1),
-                '0x' + params.proof.slice(2 + 2 * size1, 2 + 2 * size1 + 2 * size2)
-            ]
+
+            const proof = [params.proof];
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,

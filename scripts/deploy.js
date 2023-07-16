@@ -28,7 +28,7 @@ async function main() {
 
     fs.writeFileSync('deployed_addresses.json', JSON.stringify(addresses, null, 2));
 
-    const statementId = '79169223';
+    let statementId = '79169223';
     try {
         await deployments.fixture(['minaAccountProofVerifierFixture']);
         let minaAccountProofVerifier = await ethers.getContract('AccountPathVerifier');
@@ -44,6 +44,34 @@ async function main() {
             price: price,
             developer: relayer.address,
             verifiers: [minaAccountProofVerifier.address]
+        };
+        const tx = await proofMarket.connect(relayer).addStatement(testStatement);
+        const receipt = await tx.wait();
+        const event = receipt.events.find((e) => e.event === "StatementAdded");
+        console.log('Statement added successfully: id ', event.args.id);
+    } catch (error) {
+        if (error.message.includes('Statement ID already exists')) {
+            console.error('Error: Statement already exists');
+        } else {
+            console.error('Unexpected error:', error);
+        }
+    }
+    statementId = '32292';
+    try {
+        await deployments.fixture(['minaStateProofVerifierFixture']);
+        let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
+        console.log("minaStateProofVerifier address: ", minaStateProofVerifier.address);
+        definition = {
+            verificationKey: ethers.utils.formatBytes32String("Example verification key"),
+            provingKey: ethers.utils.formatBytes32String("Example proving key")
+        };
+        price = { orderBook: [[100], [100]] };
+        testStatement = {
+            id: statementId,
+            definition: definition,
+            price: price,
+            developer: relayer.address,
+            verifiers: [minaStateProofVerifier.address]
         };
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
