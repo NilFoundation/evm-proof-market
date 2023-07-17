@@ -10,7 +10,7 @@ const MockTokenABI = MockTokenJSON.abi;
 const ProofMarketEndpointJSON = JSON.parse(fs.readFileSync(`${buildDir}/proof_market_endpoint.sol/ProofMarketEndpoint.json`, 'utf8'));
 const ProofMarketEndpointABI = ProofMarketEndpointJSON.abi;
 
-const validStatementIds = ['79169223']
+const validStatementIds = ['79169223', "32292"]
 
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
 const tokenAddress = addresses.token;
@@ -27,6 +27,9 @@ async function createOrder(keystoreFile, password, statementId, price, inputFile
         if (statementId == '79169223') {
             input = input[0].array;
             input = [input.map((item) => ethers.BigNumber.from(item))];
+        } else if (statementId == '32292') {
+            input = input.map((item) => item.split(',').map((item) => ethers.BigNumber.from(item)));
+            // console.log('Input: ', input);
         } else {
             console.error('Invalid statement ID');
             return;
