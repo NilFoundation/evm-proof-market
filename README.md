@@ -49,64 +49,89 @@ These requirements must be met:
 - Length of the gap arrays must be descreased so the storage layout is preserved
 
 ## Usage
-TODO
-
-## Events
-
-To listen to events emitted by the smart contracts, you can use the following command:
+Compile the contracts before interacting with them to make sure the ABI files are present:
 ```
-npx hardhat run --network <network> scripts/trackEvents.js
+npx hardhat compile
 ```
-
-To generate some events, you can use the following command:
+Get a list of the available commands:
 ```
-npx hardhat run --network <network> scripts/interact.js
+node scripts/interact.js -h
 ```
 
-## Testing
 
-There is a testing dbms instance running on https://api.proof-market.dev.nil.foundation/.
-Also we have a running proof producer for testing EVM Proof Market.
-So the following steps can be used to test the contract and the relayer:
+### Flags
 
-1. Start a local node:
+`providerUrl`:
+This flag is used to specify the URL of the Ethereum provider that will be used to interact with the Ethereum network.
+If not specified, it defaults to 'http://localhost:8545'.
+
+`statementId`:
+This flag is used to specify the statement ID when creating a new order or getting the price of a statement.
+
+`price`:
+This flag is used to specify the price of the order when creating a new order.
+
+`inputFile`:
+This flag is used to specify the file path of the input file when creating a new order.
+It should be a JSON file in the suitable for the statement format.
+
+`keystoreFile`:
+This flag is used to specify the file path of the keystore file.
+This file contains the private key of the Ethereum account that will be used to sign the transactions.
+If not specified, it defaults to `keystore.json`.
+
+`password`:
+This flag is used to specify the password of the keystore file.
+
+### Create a keystore file from a private key
+```
+node scripts/interact.js createKeystoreFromPrivateKey --pk <privateKey> --password <password>
+```
+This command will create a keystore file from a private key and save it in the `keystore.json` file.
+Later, this file can be used to sign transactions, by specifying the `keystoreFile` and `password` flags.
+
+### Mint and approve tokens
+```
+node scripts/interact.js mintAndApprove --password <password> --keystoreFile <keystoreFile>  --providerUrl <providerUrl>
+```
+This command will mint sufficient for testing ERC20 tokens and approve the smart contracts to spend them.
+Note that on a Mainnet deployment we will use one of the existing standart ERC20 tokens, like USDT.
+
+### Get the price of a statement
+```
+node scripts/interact.js getPrice --statementId <statementId> --keystoreFile <keystoreFile>  --providerUrl <providerUrl>
+```
+
+
+### Create a new order
+```
+node scripts/interact.js createOrder --statementId <statementId> --price <price> --inputFile <inputFilePath> --password <password> --keystoreFile <keystoreFile>  --providerUrl <providerUrl>
+```
+
+### Testing usage on a local network
+1. Deploy the contracts to the local network:
 ```
 npx hardhat node
-```
-2. Deploy the contracts to the local network:
-```
 npx hardhat run scripts/deploy.js --network localhost
 ```
-3. Submit a mina account statement:
-```
-npx hardhat run --network localhost scripts/addStatement.js
-```
-4. Start the relayer:
-```
-npx hardhat run scripts/relayer/run.js
-```
-This script will produce a bunch of cryptic outputs, but it for each createOrder execution it will print after about 30-60 seconds:
-`Order closed: BigNumber { _hex: <your order number>, _isBigNumber: true }`, which means that the order was successfully closed.
+2. Obtain private key of some account from the local network (can be obtained from the console output of the first command)
 
-5. Submit an order:
+3. Create a keystore file from the private key:
 ```
-npx hardhat run --network localhost scripts/createOrder.js
+node scripts/interact.js createKeystoreFromPrivateKey --pk <privateKey> --password <password>
 ```
 
-### Important note
-Since there will be several people testing this thing, using the same instance of Proof Market, it is important to 
-- clear the database from time to time 
-    ```
-    for doc in request 
-    filter doc.sender == 'relayer'
-    remove doc in request
-    ```
-- or just create a new relayer for your testing (do not forget to register it as a proof producer and provide the ethereum address). Specify relayer's credentials in `scripts/relayer/credentials.json`
+4. Mint and approve tokens:
+```
+node scripts/interact.js mintAndApprove --password <password> --keystoreFile <keystoreFile>
+```
 
-## How to brake it
-1. Submit an order with predefined updatedOn field set to $\approx \infty$
-    - Make sure that users cannot submit orders with custom fields
-2. Now we are sloppy with addresses
-    - At least add a validation
-3. Make sure that invalid proof does not brake the workflow
-4. Make sure that some random exception allows seamless re-launch
+5. Create a new order:
+```
+node scripts/interact.js createOrder --statementId <statementId> --price <price> --inputFile <inputFilePath> --password <password> --keystoreFile <keystoreFile>
+```
+
+For example, for mina account statement
+```
+node scripts/interact.js createOrder --statementId 79169223 --price 10 --inputFile scripts/test_data/account_mina.json --password <password>
+```
