@@ -48,7 +48,8 @@ async function main() {
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementAdded");
-        console.log('Statement added successfully: id ', event.args.id);
+        const id = event.args.id;
+        console.log('Statement added successfully: id ', id.toString());
     } catch (error) {
         if (error.message.includes('Statement ID already exists')) {
             console.error('Error: Statement already exists');
@@ -76,7 +77,9 @@ async function main() {
         const tx = await proofMarket.connect(relayer).addStatement(testStatement);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementAdded");
-        console.log('Statement added successfully: id ', event.args.id);
+        const id = event.args.id;
+        console.log('Statement added successfully: id ', id.toString());
+
     } catch (error) {
         if (error.message.includes('Statement ID already exists')) {
             console.error('Error: Statement already exists');
