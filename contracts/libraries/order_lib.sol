@@ -8,7 +8,8 @@ library OrderLibrary {
     struct Order {
         uint256 id;
         uint256 statementId;
-        uint256[][] publicInputs;
+        // uint256[][] publicInputs;
+        bytes32 publicInputsHash; 
         uint256 price;
         address buyer;
         OrderStatus status;
@@ -34,11 +35,12 @@ library OrderLibrary {
         address buyer
     ) internal returns (uint256) {
         self.orderCounter++;
-
+        bytes32 publicInputsHash = hashInputs(inputData.publicInputs);
         self.orders[self.orderCounter] = Order({
             id: self.orderCounter,
             statementId: inputData.statementId,
-            publicInputs: inputData.publicInputs,
+            // publicInputs: inputData.publicInputs,
+            publicInputsHash: publicInputsHash,
             price: inputData.price,
             buyer: buyer,
             status: OrderStatus.OPEN,
@@ -77,5 +79,15 @@ library OrderLibrary {
 
         self.orders[id].proofHash = proof;
         self.orders[id].status = OrderStatus.CLOSED;
+    }
+
+    function hashInputs(
+        uint256[][] memory publicInputs
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(publicInputs));
     }
 }

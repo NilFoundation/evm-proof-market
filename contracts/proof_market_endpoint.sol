@@ -77,6 +77,7 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         statementMustBeActive(orderInput.statementId)
         returns (uint256)
     {
+        // TODO: change create, store only hash of the input
         uint256 id = orderStorage.create(orderInput, msg.sender);
         require(token.transferFrom(msg.sender, address(this), orderInput.price), "Transfer failed");
         emit OrderCreated(id, orderInput, msg.sender);
@@ -91,7 +92,12 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         emit OrderProcessing(orderId, producer);
     }
 
-    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice)
+    function closeOrder(
+        uint256 orderId,
+        uint256[][] calldata publicInputs,
+        bytes[] calldata proofs,
+        uint256 finalPrice
+    )
         public
         onlyRole(RELAYER_ROLE)
     {
@@ -99,7 +105,8 @@ contract ProofMarketEndpoint is Initializable, AccessControlUpgradeable, IProofM
         address[] memory verifier = statementStorage.get(order.statementId).verifiers;
         bytes32[] memory proofHashes = new bytes32[](proofs.length);
 
-        uint256[][] memory publicInputs = order.publicInputs;
+        // TODO: check instead if hash(publicInputs) == storedHash
+        // uint256[][] memory publicInputs = order.publicInputs;
         require(
             proofs.length == publicInputs.length && proofs.length == verifier.length,
             "Proofs, publicInputs and verifiers length mismatch"

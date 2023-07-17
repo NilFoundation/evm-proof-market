@@ -22,7 +22,7 @@ interface IProofMarketEndpoint {
     function getOrder(uint256 orderId) external view returns (OrderLibrary.Order memory);
     function createOrder(OrderLibrary.OrderInput memory orderInput) external returns (uint256);
     function setProducer(uint256 orderId, address producer) external;
-    function closeOrder(uint256 orderId, bytes[] calldata proofs, uint256 finalPrice) external;
+    function closeOrder(uint256 orderId, uint256[][] calldata publicInputs, bytes[] calldata proofs, uint256 finalPrice) external;
 
     function getStatement(uint256 id) external view returns (StatementLibrary.StatementData memory);
     function addStatement(StatementLibrary.StatementInput memory statementInput) external;

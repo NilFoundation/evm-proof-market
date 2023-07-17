@@ -158,8 +158,11 @@ describe("Proof market tests", function () {
             let publicInputPath = "./data/unified_addition/public_input.json";
             let params = getVerifierParams(configPath, proofPath, publicInputPath);
             const proof = [params.proof]
+            // const publicInputs = params.public_inputs;
+            const publicInputs = [[1, 2, 3]];
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
+                publicInputs,
                 proof,
                 finalPrice
             ))
@@ -170,11 +173,12 @@ describe("Proof market tests", function () {
         it("should revert if the caller is not the relayer", async function () {
             const orderId = 1;
             const proof = [ethers.utils.formatBytes32String("Example proof")];
+            const publicInputs = [[1, 2, 3]];
             const finalPrice = ethers.utils.parseUnits("9", 18);
 
             const nonRelayer = proofMarket.connect(user);
 
-            await expect(nonRelayer.closeOrder(orderId, proof, finalPrice))
+            await expect(nonRelayer.closeOrder(orderId, publicInputs, proof, finalPrice))
             .to.be.revertedWith(/AccessControl/);
         });
     });

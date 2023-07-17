@@ -38,6 +38,14 @@ describe('Proof validation tests', function () {
 
     describe('Unified Addition Proof', function () {
         it("Should verify correct proof", async function () {
+            let configPath = "./data/unified_addition/lambda2.json"
+            let proofPath = "./data/unified_addition/lambda2.data"
+            let publicInputPath = "./data/unified_addition/public_input.json";
+            let params = getVerifierParams(configPath,proofPath, publicInputPath);
+            const proof = [params.proof];
+            // testOrder.publicInputs = [params.public_inputs];
+            testOrder.publicInputs = [[1, 2, 3]];
+
             const tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const orderCreatedEvent = receipt.events.find(
@@ -48,15 +56,10 @@ describe('Proof validation tests', function () {
             await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
             .to.emit(proofMarket, "OrderProcessing")
             .withArgs(orderId, producer.address);
-            
-            let configPath = "./data/unified_addition/lambda2.json"
-            let proofPath = "./data/unified_addition/lambda2.data"
-            let publicInputPath = "./data/unified_addition/public_input.json";
-            let params = getVerifierParams(configPath,proofPath, publicInputPath);
-            const proof = [params.proof];
   
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
+                testOrder.publicInputs,
                 proof,
                 testOrder.price
             ))
@@ -92,9 +95,10 @@ describe('Proof validation tests', function () {
   
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
+                testOrder.publicInputs,
                 proof,
                 testOrder.price,
-                {gasLimit: 30_500_000}
+                {gasLimit: 30_000_000}
             ))
             .to.emit(proofMarket, "OrderClosed");
         });
@@ -113,7 +117,10 @@ describe('Proof validation tests', function () {
             await tx.wait();
 
             // TODO: set public input
-            testOrder.publicInputs = [[1, 2, 3]];
+            testOrder.publicInputs = [
+                params.public_inputs[0].slice(0, 400),
+            ];
+            
             tx = await proofMarket.connect(user).createOrder(testOrder);
             const receipt = await tx.wait();
             const orderCreatedEvent = receipt.events.find(
@@ -123,17 +130,18 @@ describe('Proof validation tests', function () {
 
             await expect(proofMarket.connect(relayer).setProducer(
                 orderId,
-                producer.address,
-                {gasLimit: 30_500_000}))
+                producer.address
+            ))
             .to.emit(proofMarket, "OrderProcessing")
             .withArgs(orderId, producer.address);
 
             const proof = [params.proof];
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
+                testOrder.publicInputs,
                 proof,
                 testOrder.price,
-                {gasLimit: 30_500_000}
+                {gasLimit: 30_000_000}
             ))
             .to.emit(proofMarket, "OrderClosed");
         });
