@@ -10,7 +10,7 @@ const MockTokenABI = MockTokenJSON.abi;
 const ProofMarketEndpointJSON = JSON.parse(fs.readFileSync(`${buildDir}/proof_market_endpoint.sol/ProofMarketEndpoint.json`, 'utf8'));
 const ProofMarketEndpointABI = ProofMarketEndpointJSON.abi;
 
-const validStatementIds = ['79169223']
+const validStatementIds = ['79169223', '32292'];
 
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
 const tokenAddress = addresses.token;

@@ -4,7 +4,7 @@ const {deployments, getNamedAccounts} = hre;
 const {deploy} = deployments;
 
 module.exports = async function () {
-    const {deployer, tokenOwner} = await getNamedAccounts();
+    const {deployer} = await getNamedAccounts();
 
     let libs = [
         "mina_base_gate0",
