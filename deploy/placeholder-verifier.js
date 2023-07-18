@@ -4,7 +4,7 @@ const { getNamedAccounts } = hre
 module.exports = async function() {
     const {deployments, getNamedAccounts} = hre;
     const {deploy} = deployments;
-    const {deployer, tokenOwner} = await getNamedAccounts();
+    const {deployer} = await getNamedAccounts();
 
     let libs = [
         "placeholder_verifier",
