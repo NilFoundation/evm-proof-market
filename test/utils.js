@@ -5,7 +5,7 @@ const losslessJSON = require("lossless-json")
 
 function loadParamsFromFile(jsonFile) {
     const named_params = losslessJSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-    params = {};
+    let params = {};
     params.init_params = [];
     params.init_params.push(BigInt(named_params.modulus.value));
     params.init_params.push(BigInt(named_params.r.value));
@@ -14,22 +14,22 @@ function loadParamsFromFile(jsonFile) {
     params.init_params.push(BigInt(named_params.rows_amount.value));
     params.init_params.push(BigInt(named_params.omega.value));
     params.init_params.push(BigInt(named_params.D_omegas.length));
-    for (i in named_params.D_omegas) {
+    for (let i in named_params.D_omegas) {
         params.init_params.push(BigInt(named_params.D_omegas[i].value))
     }
     params.init_params.push(named_params.step_list.length);
-    for (i in named_params.step_list) {
+    for (let i in named_params.step_list) {
         params.init_params.push(BigInt(named_params.step_list[i].value))
     }
     params.init_params.push(named_params.arithmetization_params.length);
-    for (i in named_params.arithmetization_params) {
+    for (let i in named_params.arithmetization_params) {
         params.init_params.push(BigInt(named_params.arithmetization_params[i].value))
     }
 
     params.columns_rotations = [];
-    for (i in named_params.columns_rotations) {
-        r = []
-        for (j in named_params.columns_rotations[i]) {
+    for (let i in named_params.columns_rotations) {
+        let r = []
+        for (let j in named_params.columns_rotations[i]) {
             r.push(BigInt(named_params.columns_rotations[i][j].value));
         }
         params.columns_rotations.push(r);
@@ -216,35 +216,20 @@ function prepareScalarProofPublicInputs(kimchi, kimchi_const){
     return public_input;
 }
 
-function getVerifierParamsState() {
+function getVerifierParamsState(baseParamsFile, scalarParamsFile) {
     let params = {}
-
-    params['proof'] = fs.readFileSync(path.resolve(__dirname, "./data/mina_state/proof_state.bin"), 'utf8');
-
-    params['init_params'] = [[24760, 21744], [], []];
-
+    params['init_params'] = [[26048, 22920], [], []];
     params['columns_rotations'] = [[], []]
-
-    params['public_inputs'] = [[], []]
-
+    
     // For proof 1
-    let base_params = loadParamsFromFile(path.resolve(__dirname, "./data/mina_state/verifier_params_state_base.json"));
+    let base_params = loadParamsFromFile(baseParamsFile);
     params['init_params'][1] = base_params.init_params;
     params['columns_rotations'][0] = base_params.columns_rotations;
-    params['public_inputs'][0] = prepareBaseProofPublicInputs(
-        losslessJSON.parse(fs.readFileSync(path.resolve(__dirname, "./data/mina_state/kimchi.json"),"utf8")),
-        losslessJSON.parse(fs.readFileSync(path.resolve(__dirname, "./data/mina_state/kimchi_const.json"),"utf8"))
-    );
 
     // For proof 2
-    let scalar_params = loadParamsFromFile(path.resolve(__dirname, "./data/mina_state/verifier_params_state_scalar.json"));
+    let scalar_params = loadParamsFromFile(scalarParamsFile);
     params['init_params'][2] = scalar_params.init_params;
     params['columns_rotations'][1] = scalar_params.columns_rotations;
-    params['public_inputs'][1] = prepareScalarProofPublicInputs(
-        losslessJSON.parse(fs.readFileSync(path.resolve(__dirname, "./data/mina_state/kimchi.json"),"utf8")),
-        losslessJSON.parse(fs.readFileSync(path.resolve(__dirname, "./data/mina_state/kimchi_const.json"),"utf8"))
-    );
-
     return params;
 }
 

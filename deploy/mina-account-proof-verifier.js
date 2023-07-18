@@ -30,12 +30,12 @@ module.exports = async function() {
         deployedLib[lib] = (await hre.deployments.get(lib)).address
     }
 
-    await deploy('account_gate_argument_split_gen', {
+    await deploy('account_proof_split_gen', {
         from: deployer,
         libraries: deployedLib,
         log: true,
     });
-    let account_split_gen_address = (await hre.deployments.get('account_gate_argument_split_gen')).address
+    let account_split_gen_address = (await hre.deployments.get('account_proof_split_gen')).address
 
     await deployments.fixture(['placeholderVerifierFixture']);
     let placeholderVerifier = await ethers.getContract('PlaceholderVerifier');

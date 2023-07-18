@@ -1,4 +1,6 @@
 
+const path = require("path");
+const fs = require("fs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployProofMarketFixture } = require("./fixtures.js");
@@ -87,7 +89,7 @@ describe('Proof validation tests', function () {
             await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
             .to.emit(proofMarket, "OrderProcessing")
             .withArgs(orderId, producer.address);
-            
+
             const proof = [params.proof];
   
             await expect(proofMarket.connect(relayer).closeOrder(
@@ -102,10 +104,11 @@ describe('Proof validation tests', function () {
 
     describe('Mina State Proof', function () {
         it("Should verify correct proof", async function () {
-            let params = getVerifierParamsState();
+            const baseParamsFile = path.resolve(__dirname, "./data/mina_state/verifier_params_state_base.json");
+            const scalarParamsFile = path.resolve(__dirname, "./data/mina_state/verifier_params_state_scalar.json");
+            let params = getVerifierParamsState(baseParamsFile, scalarParamsFile);
             await deployments.fixture(['minaStateProofVerifierFixture']);
             let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
-
             let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
                 testStatement.id,
                 [minaStateProofVerifier.address]
@@ -128,7 +131,9 @@ describe('Proof validation tests', function () {
             .to.emit(proofMarket, "OrderProcessing")
             .withArgs(orderId, producer.address);
 
-            const proof = [params.proof];
+            const proofFile = path.resolve(__dirname, "./data/mina_state/proof_state.bin");
+            const proof = [fs.readFileSync(proofFile)];
+            console.log('proof', proof)
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,
