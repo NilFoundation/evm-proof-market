@@ -38,6 +38,6 @@ contract AccountPathVerifier is Ownable {
         uint256[] calldata public_input
     ) external view returns (bool) {
         IVerifier v = IVerifier(_verifier);
-        return v.verify(blob, _init_params, _columns_rotations, public_input, _gates);
+        return v.verify(blob, _init_params, _columns_rotations, _gates);
     }
 }

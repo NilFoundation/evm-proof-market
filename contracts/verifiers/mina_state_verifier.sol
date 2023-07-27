@@ -58,8 +58,8 @@ contract MinaStateVerifier is Ownable {
 
         return size1 + size2 == blob.length &&
         v.verify(blob[0 : size1],
-            _init_params[1], _columns_rotations[0], public_input, _base_gates) &&
+            _init_params[1], _columns_rotations[0], _base_gates) &&
         v.verify(blob[size1 : blob.length],
-            _init_params[2], _columns_rotations[1], public_input, _scalar_gates);
+            _init_params[2], _columns_rotations[1], _scalar_gates);
     }
 }
