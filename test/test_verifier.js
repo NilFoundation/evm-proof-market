@@ -132,8 +132,7 @@ describe('Proof validation tests', function () {
             .withArgs(orderId, producer.address);
 
             const proofFile = path.resolve(__dirname, "./data/mina_state/proof_state.bin");
-            const proof = [fs.readFileSync(proofFile)];
-            console.log('proof', proof)
+            const proof = [fs.readFileSync(proofFile, 'utf8')];
             await expect(proofMarket.connect(relayer).closeOrder(
                 orderId,
                 proof,
