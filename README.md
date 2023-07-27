@@ -135,3 +135,9 @@ For example, for mina account statement
 ```
 node scripts/interact.js createOrder --statementId 79169223 --price 10 --inputFile scripts/test_data/account_mina.json --password <password>
 ```
+
+## Contract Addresses
+
+| Network      | Address |
+| ----------- | ----------- |
+| Sepolia      | 0xD8EC705993EfFF8512de7FD91d079375b9589C90       |
