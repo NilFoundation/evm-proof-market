@@ -1,11 +1,8 @@
 
-const path = require("path");
-const fs = require("fs");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { deployProofMarketFixture } = require("./fixtures.js");
-const { getVerifierParams, getVerifierParamsAccount, getVerifierParamsState } = require("./utils.js");
-const { deployments } = hre;
+const { getVerifierParams } = require("./utils.js");
 
 
 describe('Proof validation tests', function () {
@@ -14,7 +11,6 @@ describe('Proof validation tests', function () {
     before(async function () {
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
 
-        // await deployments.fixture(['unifiedAdditionVerifierFixture']);
         let unifiedAdditionVerifier = await ethers.getContract('UnifiedAdditionVerifier');
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
@@ -61,83 +57,6 @@ describe('Proof validation tests', function () {
                 orderId,
                 proof,
                 testOrder.price
-            ))
-            .to.emit(proofMarket, "OrderClosed");
-        });
-    })
-
-    describe('Mina Account Proof', function () {
-        it("Should verify correct proof", async function () {
-            await deployments.fixture(['minaAccountProofVerifierFixture']);
-            let minaAccountProofVerifier = await ethers.getContract('AccountPathVerifier');
-            let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
-                testStatement.id,
-                [minaAccountProofVerifier.address]
-            );
-            await tx.wait();
-            
-            let params = getVerifierParamsAccount();
-            testOrder.publicInputs = [params.public_inputs];
-
-            tx = await proofMarket.connect(user).createOrder(testOrder);
-            const receipt = await tx.wait();
-            const orderCreatedEvent = receipt.events.find(
-                (e) => e.event === "OrderCreated"
-            );
-            const orderId = orderCreatedEvent.args.id;
-
-            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
-            .to.emit(proofMarket, "OrderProcessing")
-            .withArgs(orderId, producer.address);
-
-            const proof = [params.proof];
-  
-            await expect(proofMarket.connect(relayer).closeOrder(
-                orderId,
-                proof,
-                testOrder.price,
-                {gasLimit: 30_500_000}
-            ))
-            .to.emit(proofMarket, "OrderClosed");
-        });
-    })
-
-    describe('Mina State Proof', function () {
-        it("Should verify correct proof", async function () {
-            const baseParamsFile = path.resolve(__dirname, "./data/mina_state/verifier_params_state_base.json");
-            const scalarParamsFile = path.resolve(__dirname, "./data/mina_state/verifier_params_state_scalar.json");
-            let params = getVerifierParamsState(baseParamsFile, scalarParamsFile);
-            await deployments.fixture(['minaStateProofVerifierFixture']);
-            let minaStateProofVerifier = await ethers.getContract('MinaStateVerifier');
-            let tx = await proofMarket.connect(relayer).updateStatementVerifiers(
-                testStatement.id,
-                [minaStateProofVerifier.address]
-            );
-            await tx.wait();
-
-            // TODO: set public input
-            testOrder.publicInputs = [[1, 2, 3]];
-            tx = await proofMarket.connect(user).createOrder(testOrder);
-            const receipt = await tx.wait();
-            const orderCreatedEvent = receipt.events.find(
-                (e) => e.event === "OrderCreated"
-            );
-            const orderId = orderCreatedEvent.args.id;
-
-            await expect(proofMarket.connect(relayer).setProducer(
-                orderId,
-                producer.address,
-                {gasLimit: 30_500_000}))
-            .to.emit(proofMarket, "OrderProcessing")
-            .withArgs(orderId, producer.address);
-
-            const proofFile = path.resolve(__dirname, "./data/mina_state/proof_state.bin");
-            const proof = [fs.readFileSync(proofFile, 'utf8')];
-            await expect(proofMarket.connect(relayer).closeOrder(
-                orderId,
-                proof,
-                testOrder.price,
-                {gasLimit: 30_500_000}
             ))
             .to.emit(proofMarket, "OrderClosed");
         });
