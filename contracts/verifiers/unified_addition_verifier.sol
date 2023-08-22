@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import '@nilfoundation/evm-placeholder-verification/contracts/interfaces/verifier.sol';
 import '@nilfoundation/evm-placeholder-verification/contracts/test/unified_addition/unified_addition_gen.sol';
+import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
 
 
 contract UnifiedAdditionVerifier is Ownable {
