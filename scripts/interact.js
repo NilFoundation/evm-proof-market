@@ -29,9 +29,9 @@ async function createOrder(keystoreFile, password, statementId, price, inputFile
             input = input[0].array;
             input = [input.map((item) => ethers.BigNumber.from(item))];
         } else if (statementId === '32292') {
-            // TODO: Do we need an array here?
             input = [input.map((item) => BigInt(item))];
-        // TODO: handle 32326
+        } else if (statementId === '32326') {
+            input = [input.map((item) => BigInt(item))];
         } else {
             console.error('Invalid statement ID');
             return;
