@@ -101,6 +101,32 @@ async function createKeystoreFromPrivateKey(privateKey, password) {
     fs.writeFileSync('keystore.json', keystore);
 }
 
+async function getOrder(orderId, providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+    try {
+        const order = await proofMarket.getOrder(orderId);
+        console.log('Order: ', order);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function getStatements(providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+    let statements = [];
+    for (const statementId of validStatementIds) {
+        try {
+            const statement = await proofMarket.getStatement(statementId);
+            statements.push(statement);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    console.log('Statements: ', statements);
+}
+
 const argv = yargs(hideBin(process.argv))
     .option('providerUrl', {
         type: 'string',
@@ -208,6 +234,38 @@ const argv = yargs(hideBin(process.argv))
         },
         async (argv) => {
             createKeystoreFromPrivateKey(argv.pk, argv.password)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .command(
+        'getOrder',
+        'Get an order',
+        {
+            orderId: {
+                type: 'string',
+                demandOption: true,
+                describe: 'Order ID',
+            },
+        },
+        async (argv) => {
+            getOrder(argv.orderId, argv.providerUrl)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .command(
+        'getStatements',
+        'Get statements',
+        {},
+        async (argv) => {
+            getStatements(argv.providerUrl)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);
