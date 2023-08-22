@@ -109,11 +109,19 @@ node scripts/interact.js createOrder --statementId <statementId> --price <price>
 ```
 
 ### Testing usage on a local network
-1. Deploy the contracts to the local network:
+0. Deploy the contracts to the local network:
 ```
 npx hardhat node
 npx hardhat run scripts/deploy.js --network localhost
 ```
+1. Add statements:
+    - UnifiedAddition verifier will be deployed automatically
+    - Mina verifiers have to be deployed manually: `from mina-state-proof repository` deploy mina verifier contracts to a local hardhat network, for that run:
+    ```
+    npm i
+    npx hardhat deploy
+    ```
+npx hardhat run scripts/addStatements.js --network localhost
 2. Obtain private key of some account from the local network (can be obtained from the console output of the first command)
 
 3. Create a keystore file from the private key:

@@ -60,5 +60,33 @@ describe('Proof validation tests', function () {
             ))
             .to.emit(proofMarket, "OrderClosed");
         });
-    })
+
+        it("Should reject incorrect proof", async function () {
+            const tx = await proofMarket.connect(user).createOrder(testOrder);
+            const receipt = await tx.wait();
+            const orderCreatedEvent = receipt.events.find(
+                (e) => e.event === "OrderCreated"
+            );
+            const orderId = orderCreatedEvent.args.id;
+
+            await expect(proofMarket.connect(relayer).setProducer(orderId, producer.address))
+            .to.emit(proofMarket, "OrderProcessing")
+            .withArgs(orderId, producer.address);
+            
+            let configPath = "./data/unified_addition/lambda2.json"
+            let proofPath = "./data/unified_addition/lambda2.data"
+            let publicInputPath = "./data/unified_addition/public_input.json";
+            let params = getVerifierParams(configPath,proofPath, publicInputPath);
+            let proof = [params.proof];
+            // make the proof incorrect
+            proof[0] = proof[0].slice(0, -1) + "e";
+  
+            await expect(proofMarket.connect(relayer).closeOrder(
+                orderId,
+                proof,
+                testOrder.price
+            ))
+            .to.be.revertedWith("Proof is not valid");
+        });
+    });
 });
