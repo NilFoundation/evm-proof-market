@@ -111,7 +111,7 @@ node scripts/interact.js createOrder --statementId <statementId> --price <price>
 ### Testing usage on a local network
 0. Start a local hardhat network `from mina-state-proof repository`:
 ```
-nm i
+npm i
 npx hardhat node
 ```
 1. Deploy the contract and add statements:

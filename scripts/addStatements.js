@@ -50,8 +50,8 @@ async function main() {
     }
 
     await addOrUpdateStatement('32326', 'unifiedAdditionVerifier');
-    await addOrUpdateStatement('79169223', 'minaAccountProofVerifier');
-    await addOrUpdateStatement('32292', 'minaStateProofVerifier');
+    // await addOrUpdateStatement('79169223', 'minaAccountProofVerifier');
+    // await addOrUpdateStatement('32292', 'minaStateProofVerifier');
 }
 
 main()
