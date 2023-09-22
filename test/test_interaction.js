@@ -112,7 +112,6 @@ describe("Interaction scripts", function () {
     });
     
     it("should create a new order:", async function () {
-        const password = "123";
         const statementId = 32326;
         const price = 100;
         const inputFilePath = 'scripts/test_inputs/unified_addition.json';
