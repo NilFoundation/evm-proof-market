@@ -92,7 +92,7 @@ describe("Interaction scripts", function () {
     });
 
     it("should deploy contracts", async function () {
-        const command = 'npx hardhat run scripts/deploy.js --network localhost';
+        const command = 'npx hardhat deployContract --network localhost';
         runCommand(command);
     });
 
@@ -117,7 +117,7 @@ describe("Interaction scripts", function () {
         const inputFilePath = 'scripts/test_inputs/unified_addition.json';
         const command = `node scripts/interact.js createOrder` +
             ` --statementId ${statementId} --price ${price}` +
-            ` --inputFile ${inputFilePath} --password ${password}`;
+            ` --inputFile ${inputFilePath} --password ${password} --force`;
         runCommand(command);
     });
 

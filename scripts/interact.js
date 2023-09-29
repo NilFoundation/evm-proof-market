@@ -1,3 +1,21 @@
+
+/**
+ * Script for interacting with the deployed ProofMarketEndpoint contract.
+ * This script provides utilities for:
+ * - Creating and getting an order
+ * - Getting statetment prices
+ * - Creating keystore from a private key
+ * - Minting test tokens and approving the ProofMarketEndpoint contract to spend them
+ * 
+ * Usage:
+ * 1. node scripts/interact.js createOrder --statementId <statementId> \
+ * --price <price> --inputFile <inputFilePath> --password <password> --keystoreFile <keystoreFile>
+ * 2. node scripts/interact.js getPrice --statementId <statementId>
+ * 3. node scripts/interact.js createKeystoreFromPrivateKey --pk <privateKey> --password <password>
+ * 4. node scripts/interact.js mintAndApprove --password <password>
+ * 5. node scripts/interact.js getOrder --orderId <orderId>
+ */
+
 const { ethers } = require("ethers");
 const fs = require('fs');
 const path = require('path');
@@ -5,24 +23,60 @@ const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const LosslessJSON = require('lossless-json');
 
+// Constants
 const buildDir = path.join(__dirname, '../artifacts/contracts');
 const MockTokenJSON = JSON.parse(fs.readFileSync(`${buildDir}/test/mock_erc20_contract.sol/MockToken.json`, 'utf8'));
 const MockTokenABI = MockTokenJSON.abi;
 const ProofMarketEndpointJSON = JSON.parse(fs.readFileSync(`${buildDir}/proof_market_endpoint.sol/ProofMarketEndpoint.json`, 'utf8'));
 const ProofMarketEndpointABI = ProofMarketEndpointJSON.abi;
-
 const validStatementIds = ['79169223', '32292', '32326'];
-
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
 const tokenAddress = addresses.token;
 const proofMarketAddress = addresses.proofMarket;
+const rl = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
 
-async function createOrder(keystoreFile, password, statementId, price, inputFile, providerUrl) {
+/**
+ * Initialize the signer and proofMarket objects.
+ * @param {string} keystoreFile - Path to the keystore file.
+ * @param {string} password - Password for the keystore.
+ * @param {string} providerUrl - Ethereum provider URL.
+ * @returns {Object} - Returns an object containing the signer and proofMarket objects.
+ */
+async function initialize(keystoreFile, password, providerUrl) {
     const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    const keystore = JSON.parse(fs.readFileSync(keystoreFile, 'utf-8'));
-    const privateKey = await ethers.Wallet.fromEncryptedJson(JSON.stringify(keystore), password);
-    const signer = new ethers.Wallet(privateKey, provider);
-    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, signer);
+
+    const network = await provider.getNetwork();
+    console.log(`Network Name: ${network.name}`);
+    console.log(`Network Chain ID: ${network.chainId}`);
+    console.log(`Contract Address: ${proofMarketAddress}`);
+
+    let signer;
+    let proofMarket;
+
+    if (keystoreFile && password) {
+        const keystore = JSON.parse(fs.readFileSync(keystoreFile, 'utf-8'));
+        const privateKey = await ethers.Wallet.fromEncryptedJson(JSON.stringify(keystore), password);
+        signer = new ethers.Wallet(privateKey, provider);
+        proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, signer);
+    } else {
+        proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+    }
+
+    return { signer, proofMarket };
+}
+
+
+/**
+ * Create a new order.
+ * @param {Object} proofMarket - The proofMarket contract object.
+ * @param {string} statementId - ID of the statement for the order.
+ * @param {string} price - Price for the order.
+ * @param {string} inputFile - Path to the input file for the order.
+ */
+async function createOrder(proofMarket, statementId, price, inputFile, force) {
     try {
         let input = LosslessJSON.parse(fs.readFileSync(inputFile, 'utf-8'));
         if (statementId == '79169223') {
@@ -37,14 +91,33 @@ async function createOrder(keystoreFile, password, statementId, price, inputFile
             return;
         }
         const parsedPrice = ethers.utils.parseUnits(price, 18);
-        const testOrder = {
+        const order = {
             statementId: statementId,
             publicInputs: input,
             price: parsedPrice
         };
-        console.log('Creating order:', testOrder);
+        console.log('Creating order:', order);
 
-        const tx = await proofMarket.createOrder(testOrder);
+        const provider = proofMarket.provider;
+        const gasPrice = await provider.getGasPrice();
+        const gasLimit = await proofMarket.estimateGas.createOrder(order);
+
+        console.log('Estimated gas limit:', gasLimit.toString());
+
+        if (!force) {
+            const confirm = await new Promise((resolve) => {
+                rl.question('Confirm transaction (y/n): ', (answer) => {
+                    rl.close();
+                    resolve(answer);
+                });
+            });
+            if (confirm !== 'y') {
+                console.log('Transaction cancelled');
+                return;
+            }
+        }
+
+        const tx = await proofMarket.createOrder(order);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "OrderCreated");
         console.log('Order created successfully: id ', event.args.id);
@@ -57,11 +130,12 @@ async function createOrder(keystoreFile, password, statementId, price, inputFile
     }
 }
 
-async function mintAndApprove(keystoreFile, password, providerUrl) {
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    const keystore = JSON.parse(fs.readFileSync(keystoreFile, 'utf-8'));
-    const privateKey = await ethers.Wallet.fromEncryptedJson(JSON.stringify(keystore), password);
-    const signer = new ethers.Wallet(privateKey, provider);
+/**
+ * Mint test tokens and approve them for spending.
+ * @param {Object} signer - The signer object.
+ * @param {Object} proofMarket - The proofMarket contract object.
+ */
+async function mintAndApprove(signer, proofMarket) {
     const token = new ethers.Contract(tokenAddress, MockTokenABI, signer);
     try {
         const tx = await token.mint(signer.address, ethers.utils.parseUnits("1000000", 18));
@@ -80,9 +154,12 @@ async function mintAndApprove(keystoreFile, password, providerUrl) {
     }
 }
 
-async function getPrice(statementId, providerUrl) {
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+/**
+ * Fetch the price for a given statement.
+ * @param {string} statementId - ID of the statement.
+ * @param {Object} proofMarket - The proofMarket contract object.
+ */
+async function getPrice(statementId, proofMarket) {
     try {
         const statement = await proofMarket.getStatement(statementId);
         const orderBook = statement.price.orderBook;
@@ -93,6 +170,11 @@ async function getPrice(statementId, providerUrl) {
     }
 }
 
+/**
+ * Create a keystore file from a given private key.
+ * @param {string} privateKey - Ethereum private key.
+ * @param {string} password - Password for the keystore.
+ */
 async function createKeystoreFromPrivateKey(privateKey, password) {
     const wallet = new ethers.Wallet(privateKey);
     const keystore = await wallet.encrypt(password);
@@ -101,9 +183,12 @@ async function createKeystoreFromPrivateKey(privateKey, password) {
     fs.writeFileSync('keystore.json', keystore);
 }
 
-async function getOrder(orderId, providerUrl) {
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+/**
+ * Fetch an order by its ID.
+ * @param {string} orderId - ID of the order.
+ * @param {Object} proofMarket - The proofMarket contract object.
+ */
+async function getOrder(orderId, proofMarket) {
     try {
         const order = await proofMarket.getOrder(orderId);
         console.log('Order: ', order);
@@ -112,9 +197,11 @@ async function getOrder(orderId, providerUrl) {
     }
 }
 
-async function getStatements(providerUrl) {
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+/**
+ * Fetch all valid statements.
+ * @param {Object} proofMarket - The proofMarket contract object.
+ */
+async function getStatements(proofMarket) {
     let statements = [];
     for (const statementId of validStatementIds) {
         try {
@@ -127,7 +214,13 @@ async function getStatements(providerUrl) {
     console.log('Statements: ', statements);
 }
 
+// Command-line interface setup
 const argv = yargs(hideBin(process.argv))
+    .option('force', {
+        type: 'boolean',
+        default: false,
+        describe: 'Force the transaction without asking for confirmation',
+    })
     .option('providerUrl', {
         type: 'string',
         description: 'Provider URL',
@@ -164,8 +257,9 @@ const argv = yargs(hideBin(process.argv))
             describe: 'Password',
         },
         },
-        (argv) => {
-            createOrder(argv.keystoreFile, argv.password, argv.statementId, argv.price, argv.inputFile, argv.providerUrl)
+        async (argv) => {
+            const { signer, proofMarket } = await initialize(argv.keystoreFile, argv.password, argv.providerUrl);
+            createOrder(proofMarket, argv.statementId, argv.price, argv.inputFile, argv.force)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);
@@ -188,8 +282,9 @@ const argv = yargs(hideBin(process.argv))
                 describe: 'Password',
             },
         },
-        (argv) => {
-            mintAndApprove(argv.keystoreFile, argv.password, argv.providerUrl)
+        async (argv) => {
+            const { signer, proofMarket } = await initialize(argv.keystoreFile, argv.password, argv.providerUrl);
+            mintAndApprove(signer, proofMarket)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);
@@ -209,7 +304,8 @@ const argv = yargs(hideBin(process.argv))
             },
         },
         async (argv) => {
-            getPrice(argv.statementId, argv.providerUrl)
+            const { signer, proofMarket } = await initialize(argv.keystoreFile, argv.password, argv.providerUrl);
+            getPrice(argv.statementId, proofMarket)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);
@@ -252,7 +348,8 @@ const argv = yargs(hideBin(process.argv))
             },
         },
         async (argv) => {
-            getOrder(argv.orderId, argv.providerUrl)
+            const { signer, proofMarket } = await initialize(argv.keystoreFile, argv.password, argv.providerUrl);
+            getOrder(argv.orderId, proofMarket)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);
@@ -265,7 +362,8 @@ const argv = yargs(hideBin(process.argv))
         'Get statements',
         {},
         async (argv) => {
-            getStatements(argv.providerUrl)
+            const { signer, proofMarket } = await initialize(argv.keystoreFile, argv.password, argv.providerUrl);
+            getStatements(proofMarket)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);

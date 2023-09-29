@@ -86,13 +86,11 @@ async function deployContract() {
 
     let [deployer, relayer] = await ethers.getSigners();
 
-    // Log the deployer address
     console.log('Deploying contracts with the account:', deployer.address);
-    // Deploy the token contract
     const token = await ERC20.connect(deployer).deploy();
     await token.deployed();
     console.log('MockToken deployed to:', token.address);
-    // Deploy the proof market contract
+
     const proofMarket = await upgrades.deployProxy(ProofMarket.connect(deployer), [token.address]);
     await proofMarket.deployed();
     console.log('ProofMarketEndpoint deployed to:', proofMarket.address);
