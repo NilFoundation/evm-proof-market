@@ -1,52 +1,63 @@
-const fs = require('fs');
-const { task } = require("hardhat/config");
-
 
 /**
- * Script for maintaining and upgrading the deployed ProofMarketEndpoint contract.
+ * Hardhat tasks script for maintenance the ProofMarketEndpoint contract.
  * This script provides utilities for:
  * - Adding new statements
  * - Updating verifiers for existing statements
  * - Upgrading the contract
+ * - Deploying the contract
+ * - Getting balances of contract's owner and relayer
  * 
  * Usage:
- * 1. Add a statement: node maintain.js addStatement --statementId <Statement ID>
- * 2. Update verifiers: node maintain.js updateStatementVerifiers --statementId <Statement ID>
+ * 1. Add a statement: node maintain.js addStatement --statement-id <Statement ID> --verifiers <verifier1,verifier2,...>
+ * 2. Update verifiers: node maintain.js updateStatementVerifiers --statement-id <Statement ID> --verifiers <verifier1,verifier2,...>
  * 3. Upgrade the contract: node maintain.js upgradeContract
+ * 4. Deploy the contract: node maintain.js deployContract
+ * 5. Get balances: node maintain.js getBalance
  */
 
+const fs = require('fs');
+const { task } = require("hardhat/config");
+
+// Constants
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf8'));
 const proofMarketAddress = addresses.proofMarket;
-const verifiersAddresses = addresses.verifiers;
 
 /**
  * Add a new statement with the provided ID to the ProofMarket contract.
- * Verifiers for the statement are retrieved from the deployed_addresses.json file.
+ * Verifiers for the statement are passed as arguments.
+ * Throws an error if any verifier address is invalid.
+ * 
+ * @param {string} statementId - The ID of the statement to add.
+ * @param {Array<string>} verifiers - Array of verifier addresses.
  */
-async function addStatement(statementId) {
+async function addStatement(statementId, verifiers) {
     const [owner, relayer] = await ethers.getSigners();
     const proofMarket =  await ethers.getContractAt('ProofMarketEndpoint', proofMarketAddress, relayer);
-    if (!verifiersAddresses[statementId]) {
-        console.error('Invalid statement ID');
-        return;
-    }
-    const statementVerifiers = verifiersAddresses[statementId];
-    const testStatement = {
-        id: statementId,
-        definition: {
-            verificationKey: ethers.utils.formatBytes32String("Example verification key"),
-            provingKey: ethers.utils.formatBytes32String("Example proving key")
-        },
-        price: { orderBook: [[100], [100]] },
-        developer: proofMarket.signer.address,
-        verifiers: statementVerifiers
+    verifiers.forEach(verifier => {
+        if (!ethers.utils.isAddress(verifier)) {
+            throw new Error(`Invalid verifier address: ${verifier}`);
+        }
+    });
+    const statementDefinition = {
+        verificationKey: ethers.utils.formatBytes32String("Example verification key"),
+        provingKey: ethers.utils.formatBytes32String("Example proving key")
     };
+    const statementPrice = { orderBook: [[100], [100]] };
+    const statement = {
+        id: statementId,
+        definition: statementDefinition,
+        price: statementPrice,
+        developer: relayer.address,
+        verifiers: verifiers,
+    };
+    console.log('Adding statement: ', statement);
 
     try {
-        const tx = await proofMarket.addStatement(testStatement);
-        const receipt = await tx.wait();
-        const event = receipt.events.find((e) => e.event === "StatementAdded");
-        console.log('Statement added successfully: id ', event.args.id.toString());
+        const addTx = await proofMarket.connect(relayer).addStatement(statement);
+        const addReceipt = await addTx.wait();
+        const addEvent = addReceipt.events.find((e) => e.event === "StatementAdded");
+        console.log('Statement added successfully: id ', addEvent.args.id.toString());
     } catch (error) {
         if (error.message.includes('Statement ID already exists')) {
             console.error('Statement already exists, update it');
@@ -58,17 +69,15 @@ async function addStatement(statementId) {
 
 /**
  * Update the verifiers of an existing statement in the ProofMarket contract.
+ * 
+ * @param {string} statementId - The ID of the statement to update.
+ * @param {Array<string>} verifiers - Array of new verifier addresses.
  */
-async function updateStatementVerifiers(statementId) {
+async function updateStatementVerifiers(statementId, verifiers) {
     const [owner, relayer] = await ethers.getSigners();
     const proofMarket =  await ethers.getContractAt('ProofMarketEndpoint', proofMarketAddress, relayer);
-    if (!verifiersAddresses[statementId]) {
-        console.error('Invalid statement ID');
-        return;
-    }
-    const statementVerifiers = verifiersAddresses[statementId];
     try {
-        const tx = await proofMarket.updateStatementVerifiers(statementId, statementVerifiers);
+        const tx = await proofMarket.updateStatementVerifiers(statementId, verifiers);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementVerifiersUpdated");
         console.log('Statement updated successfully: id ', event.args.id.toString());
@@ -122,7 +131,7 @@ async function upgradeContract() {
 }
 
 /**
- * Get balances
+ * Get balances of the contract's owner and relayer
  */
 async function getBalance() {
     const [signer, relayer] = await ethers.getSigners();
@@ -138,9 +147,11 @@ async function getBalance() {
 
 task("addStatement", "Add a new statement to the ProofMarket contract")
     .addParam("statementId", "The statement ID to add")
+    .addParam("verifiers", "The verifiers to add as a comma-separated list")
     .setAction(async (taskArgs, hre) => {
         try {
-            await addStatement(taskArgs.statementId);
+            const verifiers = taskArgs.verifiers.split(',');
+            await addStatement(taskArgs.statementId, verifiers);
         } catch (error) {
             console.error(error);
         }
@@ -148,11 +159,14 @@ task("addStatement", "Add a new statement to the ProofMarket contract")
 
 task("updateStatementVerifiers", "Update verifiers for an existing statement in the ProofMarket contract")
     .addParam("statementId", "The statement ID to update")
+    .addParam("verifiers", "The verifiers to add as a comma-separated list")
     .setAction(async (taskArgs, hre) => {
         try {
-        await updateStatementVerifiers(taskArgs.statementId);
+            const verifiers = taskArgs.verifiers.split(',');
+            console.log('Updating statement verifiers: ', verifiers);
+            await updateStatementVerifiers(taskArgs.statementId, verifiers);
         } catch (error) {
-        console.error(error);
+            console.error(error);
       }
     });
 

@@ -97,7 +97,10 @@ describe("Interaction scripts", function () {
     });
 
     it("should add statements", async function () {
-        const command = 'npx hardhat run scripts/addStatements.js --network localhost';
+        const statementId = 32326;
+        const unifiedAdditionVerifier = '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9';
+        const command = `npx hardhat addStatement --statement-id ${statementId}` +
+         ` --verifiers ${unifiedAdditionVerifier} --network localhost`;
         runCommand(command);
     });
 
