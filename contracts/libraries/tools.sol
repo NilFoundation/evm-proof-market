@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import '../interfaces/custom_verifier.sol';
-import '@nilfoundation/evm-placeholder-verification/contracts/interfaces/verifier.sol';
-import '@nilfoundation/evm-placeholder-verification/contracts/verifier.sol';
 
 
 library Tools {

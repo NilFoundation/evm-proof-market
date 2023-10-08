@@ -2,6 +2,7 @@
   "name": "proof-market-endpoint",
   "devDependencies": {
     "@nilfoundation/evm-mina-state": "github:nilfoundation/mina-state-proof",
+    "@nilfoundation/evm-lorem-ipsum": "github:nilfoundation/evm-lorem-ipsum",
     "@nilfoundation/evm-placeholder-verification": "^1.0.14",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.2",

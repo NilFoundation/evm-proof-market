@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
+const LosslessJSON = require('lossless-json');
 
 const buildDir = path.join(__dirname, '../artifacts/contracts');
 const MockTokenJSON = JSON.parse(fs.readFileSync(`${buildDir}/test/mock_erc20_contract.sol/MockToken.json`, 'utf8'));
@@ -10,7 +11,7 @@ const MockTokenABI = MockTokenJSON.abi;
 const ProofMarketEndpointJSON = JSON.parse(fs.readFileSync(`${buildDir}/proof_market_endpoint.sol/ProofMarketEndpoint.json`, 'utf8'));
 const ProofMarketEndpointABI = ProofMarketEndpointJSON.abi;
 
-const validStatementIds = ['79169223', '32292'];
+const validStatementIds = ['79169223', '32292', '32326'];
 
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf-8'));
 const tokenAddress = addresses.token;
@@ -23,14 +24,14 @@ async function createOrder(keystoreFile, password, statementId, price, inputFile
     const signer = new ethers.Wallet(privateKey, provider);
     const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, signer);
     try {
-        let input = JSON.parse(fs.readFileSync(inputFile, 'utf-8'));
+        let input = LosslessJSON.parse(fs.readFileSync(inputFile, 'utf-8'));
         if (statementId == '79169223') {
             input = input[0].array;
             input = [input.map((item) => ethers.BigNumber.from(item))];
         } else if (statementId === '32292') {
-            input = input.map((item) => item.split(',').map((item) => ethers.BigNumber.from(item)));
-            console.log('input', input)
-            // return;
+            input = [input.map((item) => BigInt(item))];
+        } else if (statementId === '32326') {
+            input = [input.map((item) => BigInt(item))];
         } else {
             console.error('Invalid statement ID');
             return;
@@ -98,6 +99,32 @@ async function createKeystoreFromPrivateKey(privateKey, password) {
     console.log('Keystore: ', keystore);
 
     fs.writeFileSync('keystore.json', keystore);
+}
+
+async function getOrder(orderId, providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+    try {
+        const order = await proofMarket.getOrder(orderId);
+        console.log('Order: ', order);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function getStatements(providerUrl) {
+    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    const proofMarket = new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, provider);
+    let statements = [];
+    for (const statementId of validStatementIds) {
+        try {
+            const statement = await proofMarket.getStatement(statementId);
+            statements.push(statement);
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+    console.log('Statements: ', statements);
 }
 
 const argv = yargs(hideBin(process.argv))
@@ -207,6 +234,38 @@ const argv = yargs(hideBin(process.argv))
         },
         async (argv) => {
             createKeystoreFromPrivateKey(argv.pk, argv.password)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .command(
+        'getOrder',
+        'Get an order',
+        {
+            orderId: {
+                type: 'string',
+                demandOption: true,
+                describe: 'Order ID',
+            },
+        },
+        async (argv) => {
+            getOrder(argv.orderId, argv.providerUrl)
+            .then(() => process.exit(0))
+            .catch((error) => {
+                console.error(error);
+                process.exit(1);
+            });
+        }
+    )
+    .command(
+        'getStatements',
+        'Get statements',
+        {},
+        async (argv) => {
+            getStatements(argv.providerUrl)
             .then(() => process.exit(0))
             .catch((error) => {
                 console.error(error);

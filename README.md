@@ -109,10 +109,24 @@ node scripts/interact.js createOrder --statementId <statementId> --price <price>
 ```
 
 ### Testing usage on a local network
-1. Deploy the contracts to the local network:
+0. Start a local hardhat network `from mina-state-proof repository`:
 ```
+nm i
 npx hardhat node
+```
+1. Deploy the contract and add statements:
+```
 npx hardhat run scripts/deploy.js --network localhost
+```
+It will create a `deployed_addresses.json` file with the addresses of the deployed contracts.
+
+Note:
+- UnifiedAddition verifier has to be deployed manually (ignore for now)
+- Mina verifiers have to be automatically deployed
+    
+On local hardhat node addresses are persistent, so you can just run the following command to add statements:
+```
+npx hardhat run scripts/addStatements.js --network localhost
 ```
 2. Obtain private key of some account from the local network (can be obtained from the console output of the first command)
 
@@ -133,7 +147,7 @@ node scripts/interact.js createOrder --statementId <statementId> --price <price>
 
 For example, for mina account statement
 ```
-node scripts/interact.js createOrder --statementId 79169223 --price 10 --inputFile scripts/test_data/account_mina.json --password <password>
+node scripts/interact.js createOrder --statementId 79169223 --price 10 --inputFile scripts/test_inputs/account_mina.json --password <password>
 ```
 
 ## Contract Addresses

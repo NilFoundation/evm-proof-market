@@ -10,10 +10,8 @@ describe("Proof market tests", function () {
     
     before(async function () {
         ({ proofMarket, owner, user, producer, relayer } = await deployProofMarketFixture());
-        console.log("proofMarket address: ", proofMarket.address);
         await deployments.fixture(['unifiedAdditionVerifierFixture']);
         let unifiedAdditionVerifier = await ethers.getContract('UnifiedAdditionVerifier');
-        console.log("unifiedAdditionVerifier address: ", unifiedAdditionVerifier.address);
         definition = {
             verificationKey: ethers.utils.formatBytes32String("Example verification key"),
             provingKey: ethers.utils.formatBytes32String("Example proving key")
