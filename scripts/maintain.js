@@ -20,6 +20,9 @@ const fs = require('fs');
 const { task } = require("hardhat/config");
 
 // Constants
+if (!fs.existsSync('deployed_addresses.json')) {
+    fs.writeFileSync('deployed_addresses.json', JSON.stringify({}));
+}
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf8'));
 const proofMarketAddress = addresses.proofMarket;
 

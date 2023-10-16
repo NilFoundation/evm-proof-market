@@ -165,6 +165,12 @@ Available tasks include deployContract, upgradeContract, addStatements, and upda
 
 ## Contract Addresses
 
+### Endpoint
 | Network      | Address |
 | ----------- | ----------- |
 | Sepolia      | 0xD8EC705993EfFF8512de7FD91d079375b9589C90       |
+
+### UnifiedAdditionVerifier
+| Network      | Address |
+| ----------- | ----------- |
+| Sepolia      | 0xc6E7A6Dcad73D499520DDdf5d9b56E0E18DD9bAd       |
