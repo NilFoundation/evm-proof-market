@@ -12,6 +12,10 @@ run_hardhat_test() {
     if [ "$USE_DOCKER" = true ]; then
         cd "$REPO_ROOT"
 
+        if [ ! -f .env ]; then
+            cp .env.example .env
+        fi
+
         $DOCKER  build --build-arg USER_ID=$(id -u) --build-arg GROUP_ID=$(id -g) -t tests-env scripts/docker
         $DOCKER run $DOCKER_OPTS --rm \
             --volume ${PWD}:/home:Z -w /home \
