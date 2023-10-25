@@ -49,6 +49,6 @@ contract UnifiedAdditionVerifier is Ownable {
         returns (bool)
     {
         IVerifier v = IVerifier(_verifier);
-        return v.verify(blob, _init_params, _columns_rotations, _gates);
+        return v.verify(blob, _init_params, _columns_rotations, public_input, _gates);
     }
 }
