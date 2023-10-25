@@ -5,6 +5,10 @@ WORKDIR /home
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN chown node:node /home
+ARG USER_ID
+ARG GROUP_ID
 
-USER node
+RUN if getent passwd $USER_ID ; then echo "User exists" ; else useradd -u $USER_ID -g $GROUP_ID -m user ; fi
+RUN chown -R $USER_ID:$GROUP_ID /home
+
+USER $USER_ID

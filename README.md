@@ -14,31 +14,37 @@ The repository uses Hardhat as a development environment for compilation, testin
 npm install
 ```
 
-## Compile
+## Commands
+
+### Compile
+Compile the contracts to ensure ABI files are present:
 ```
 npx hardhat compile
 ```
 
-## Test
+### Test
+Execute tests for the contracts:
 ```
 npx hardhat test #Execute tests
 ```
 
-## Deploy
+
+### Deploy
+Deploy the contracts to a specified network:
 ```
-npx hardhat run scripts/deploy.js --network <network>
+npx hardhat deployContract --network <network>
 ```
 
-To deploy to a local network, you can use the following command to start a local node:
+To deploy to a local network:
 ```
 npx hardhat node
 ```
-And then deploy to the local network in a separate terminal:
+And then deploy the contract to the local network in a separate terminal:
 ```
-npx hardhat run scripts/deploy.js --network localhost
+npx hardhat deployContract --network localhost
 ```
 
-## Update
+### Update
 Check storage layout of the contracts:
 ```
 npx hardhat check
@@ -48,11 +54,7 @@ These requirements must be met:
 - Any new storage slots must be added `at the end` of the contract
 - Length of the gap arrays must be descreased so the storage layout is preserved
 
-## Usage
-Compile the contracts before interacting with them to make sure the ABI files are present:
-```
-npx hardhat compile
-```
+### Usage
 Get a list of the available commands:
 ```
 node scripts/interact.js -h
@@ -62,42 +64,45 @@ node scripts/interact.js -h
 ### Flags
 
 `providerUrl`:
-This flag is used to specify the URL of the Ethereum provider that will be used to interact with the Ethereum network.
+URL of the Ethereum provider.
 If not specified, it defaults to 'http://localhost:8545'.
 
 `statementId`:
-This flag is used to specify the statement ID when creating a new order or getting the price of a statement.
+ID for creating a new order or fetching a statement's price.
 
 `price`:
-This flag is used to specify the price of the order when creating a new order.
+Price of the order when creating a new order.
 
 `inputFile`:
-This flag is used to specify the file path of the input file when creating a new order.
-It should be a JSON file in the suitable for the statement format.
+JSON file path suitable for the statement format when creating a new order.
 
 `keystoreFile`:
-This flag is used to specify the file path of the keystore file.
-This file contains the private key of the Ethereum account that will be used to sign the transactions.
+Path of the keystore file containing the private key for signing transactions.
 If not specified, it defaults to `keystore.json`.
 
 `password`:
-This flag is used to specify the password of the keystore file.
+Password for the keystore file.
 
-### Create a keystore file from a private key
+`vefiviers`:
+The verifiers of a statement as a comma-separated list.
+
+### Common usage
+
+- Create a keystore file from a private key
 ```
 node scripts/interact.js createKeystoreFromPrivateKey --pk <privateKey> --password <password>
 ```
 This command will create a keystore file from a private key and save it in the `keystore.json` file.
 Later, this file can be used to sign transactions, by specifying the `keystoreFile` and `password` flags.
 
-### Mint and approve tokens
+- Mint and approve tokens
 ```
 node scripts/interact.js mintAndApprove --password <password> --keystoreFile <keystoreFile>  --providerUrl <providerUrl>
 ```
 This command will mint sufficient for testing ERC20 tokens and approve the smart contracts to spend them.
 Note that on a Mainnet deployment we will use one of the existing standart ERC20 tokens, like USDT.
 
-### Get the price of a statement
+- Get the price of a statement
 ```
 node scripts/interact.js getPrice --statementId <statementId> --keystoreFile <keystoreFile>  --providerUrl <providerUrl>
 ```
@@ -108,10 +113,10 @@ node scripts/interact.js getPrice --statementId <statementId> --keystoreFile <ke
 node scripts/interact.js createOrder --statementId <statementId> --price <price> --inputFile <inputFilePath> --password <password> --keystoreFile <keystoreFile>  --providerUrl <providerUrl>
 ```
 
-### Testing usage on a local network
+## Testing usage on a local network
 0. Start a local hardhat network `from mina-state-proof repository`:
 ```
-nm i
+npm i
 npx hardhat node
 ```
 1. Deploy the contract and add statements:
@@ -150,8 +155,22 @@ For example, for mina account statement
 node scripts/interact.js createOrder --statementId 79169223 --price 10 --inputFile scripts/test_inputs/account_mina.json --password <password>
 ```
 
+## Maintenance
+
+Contract maintenance is facilitated by Hardhat tasks located in scripts/maintain.js. Execute tasks using:
+```
+npx hardhat <taskName> --network <network>
+```
+Available tasks include deployContract, upgradeContract, addStatements, and updateStatementVerifiers.
+
 ## Contract Addresses
 
+### Endpoint
 | Network      | Address |
 | ----------- | ----------- |
 | Sepolia      | 0xD8EC705993EfFF8512de7FD91d079375b9589C90       |
+
+### UnifiedAdditionVerifier
+| Network      | Address |
+| ----------- | ----------- |
+| Sepolia      | 0xc6E7A6Dcad73D499520DDdf5d9b56E0E18DD9bAd       |

@@ -1,50 +1,66 @@
-const { ethers } = require("ethers");
-const fs = require('fs');
-const path = require('path');
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
 
+/**
+ * Hardhat tasks script for maintenance the ProofMarketEndpoint contract.
+ * This script provides utilities for:
+ * - Adding new statements
+ * - Updating verifiers for existing statements
+ * - Upgrading the contract
+ * - Deploying the contract
+ * - Getting balances of contract's owner and relayer
+ * 
+ * Usage:
+ * 1. Add a statement: node maintain.js addStatement --statement-id <Statement ID> --verifiers <verifier1,verifier2,...>
+ * 2. Update verifiers: node maintain.js updateStatementVerifiers --statement-id <Statement ID> --verifiers <verifier1,verifier2,...>
+ * 3. Upgrade the contract: node maintain.js upgradeContract
+ * 4. Deploy the contract: node maintain.js deployContract
+ * 5. Get balances: node maintain.js getBalance
+ */
+
+const fs = require('fs');
+const { task } = require("hardhat/config");
+
+// Constants
+if (!fs.existsSync('deployed_addresses.json')) {
+    fs.writeFileSync('deployed_addresses.json', JSON.stringify({}));
+}
 const addresses = JSON.parse(fs.readFileSync('deployed_addresses.json', 'utf8'));
 const proofMarketAddress = addresses.proofMarket;
-const verifiersAddresses = addresses.verifiers;
-const buildDir = path.join(__dirname, '../artifacts/contracts');
-const ProofMarketEndpointJSON = JSON.parse(fs.readFileSync(`${buildDir}/proof_market_endpoint.sol/ProofMarketEndpoint.json`, 'utf8'));
-const ProofMarketEndpointABI = ProofMarketEndpointJSON.abi;
 
-async function getSigner(keystoreFile, password, providerUrl) {
-    const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-    const keystore = JSON.parse(fs.readFileSync(keystoreFile, 'utf8'));
-    const privateKey = await ethers.Wallet.fromEncryptedJson(JSON.stringify(keystore), password);
-    return new ethers.Wallet(privateKey, provider);
-}
-
-async function getProofMarket(keystoreFile, password, providerUrl) {
-    const signer = await getSigner(keystoreFile, password, providerUrl);
-    return new ethers.Contract(proofMarketAddress, ProofMarketEndpointABI, signer);
-}
-
-async function addStatement(proofMarket, statementId) {
-    if (!verifiersAddresses[statementId]) {
-        console.error('Invalid statement ID');
-        return;
-    }
-    const statementVerifiers = verifiersAddresses[statementId];
-    const testStatement = {
-        id: statementId,
-        definition: {
-            verificationKey: ethers.utils.formatBytes32String("Example verification key"),
-            provingKey: ethers.utils.formatBytes32String("Example proving key")
-        },
-        price: { orderBook: [[100], [100]] },
-        developer: proofMarket.signer.address,
-        verifiers: statementVerifiers
+/**
+ * Add a new statement with the provided ID to the ProofMarket contract.
+ * Verifiers for the statement are passed as arguments.
+ * Throws an error if any verifier address is invalid.
+ * 
+ * @param {string} statementId - The ID of the statement to add.
+ * @param {Array<string>} verifiers - Array of verifier addresses.
+ */
+async function addStatement(statementId, verifiers) {
+    const [owner, relayer] = await ethers.getSigners();
+    const proofMarket =  await ethers.getContractAt('ProofMarketEndpoint', proofMarketAddress, relayer);
+    verifiers.forEach(verifier => {
+        if (!ethers.utils.isAddress(verifier)) {
+            throw new Error(`Invalid verifier address: ${verifier}`);
+        }
+    });
+    const statementDefinition = {
+        verificationKey: ethers.utils.formatBytes32String("Example verification key"),
+        provingKey: ethers.utils.formatBytes32String("Example proving key")
     };
+    const statementPrice = { orderBook: [[100], [100]] };
+    const statement = {
+        id: statementId,
+        definition: statementDefinition,
+        price: statementPrice,
+        developer: relayer.address,
+        verifiers: verifiers,
+    };
+    console.log('Adding statement: ', statement);
 
     try {
-        const tx = await proofMarket.addStatement(testStatement);
-        const receipt = await tx.wait();
-        const event = receipt.events.find((e) => e.event === "StatementAdded");
-        console.log('Statement added successfully: id ', event.args.id.toString());
+        const addTx = await proofMarket.connect(relayer).addStatement(statement);
+        const addReceipt = await addTx.wait();
+        const addEvent = addReceipt.events.find((e) => e.event === "StatementAdded");
+        console.log('Statement added successfully: id ', addEvent.args.id.toString());
     } catch (error) {
         if (error.message.includes('Statement ID already exists')) {
             console.error('Statement already exists, update it');
@@ -54,14 +70,17 @@ async function addStatement(proofMarket, statementId) {
     }
 }
 
-async function updateStatementVerifiers(proofMarket, statementId) {
-    if (!verifiersAddresses[statementId]) {
-        console.error('Invalid statement ID');
-        return;
-    }
-    const statementVerifiers = verifiersAddresses[statementId];
+/**
+ * Update the verifiers of an existing statement in the ProofMarket contract.
+ * 
+ * @param {string} statementId - The ID of the statement to update.
+ * @param {Array<string>} verifiers - Array of new verifier addresses.
+ */
+async function updateStatementVerifiers(statementId, verifiers) {
+    const [owner, relayer] = await ethers.getSigners();
+    const proofMarket =  await ethers.getContractAt('ProofMarketEndpoint', proofMarketAddress, relayer);
     try {
-        const tx = await proofMarket.updateStatementVerifiers(statementId, statementVerifiers);
+        const tx = await proofMarket.updateStatementVerifiers(statementId, verifiers);
         const receipt = await tx.wait();
         const event = receipt.events.find((e) => e.event === "StatementVerifiersUpdated");
         console.log('Statement updated successfully: id ', event.args.id.toString());
@@ -70,64 +89,121 @@ async function updateStatementVerifiers(proofMarket, statementId) {
     }
 }
 
-const argv = yargs(hideBin(process.argv))
-    .option('providerUrl', {
-        type: 'string',
-        description: 'Provider URL',
-        default: 'http://localhost:8545',
-    })
-    .option('keystoreFile', {
-        type: 'string',
-        description: 'Keystore file',
-        default: 'keystore.json',
-    })
-    .option('password', {
-        type: 'string',
-        description: 'Keystore password',
-        default: 'password',
-    })
-    .command(
-        'addStatement',
-        'Add a new statement',
-        {
-            statementId: {
-                type: 'string',
-                demandOption: true,
-                describe: 'Statement ID for the statement',
-            }
-        },
-        async (argv) => {
-            try {
-                const proofMarket = await getProofMarket(argv.keystoreFile, argv.password, argv.providerUrl);
-                await addStatement(proofMarket, argv.statementId);
-                process.exit(0);
-            } catch (error) {
-                console.error(error);
-                process.exit(1);
-            }
+/**
+ * Deploy ProofMarketEndpoint contract
+ */
+async function deployContract() {
+    const ProofMarket = await ethers.getContractFactory("ProofMarketEndpoint");
+    const ERC20 = await ethers.getContractFactory("MockToken");
+
+    let [deployer, relayer] = await ethers.getSigners();
+
+    console.log('Deploying contracts with the account:', deployer.address);
+    const token = await ERC20.connect(deployer).deploy();
+    await token.deployed();
+    console.log('MockToken deployed to:', token.address);
+
+    const proofMarket = await upgrades.deployProxy(ProofMarket.connect(deployer), [token.address]);
+    await proofMarket.deployed();
+    console.log('ProofMarketEndpoint deployed to:', proofMarket.address);
+    // Set the relayer role
+    await proofMarket.grantRole(proofMarket.RELAYER_ROLE(), relayer.address);
+    console.log('Relayer role granted to:', relayer.address);
+    const addresses = {
+        token: token.address,
+        proofMarket: proofMarket.address,
+        relayer: relayer.address,
+    };
+
+    fs.writeFileSync('deployed_addresses.json', JSON.stringify(addresses, null, 2));
+}
+
+/**
+ * Upgrade the deployed ProofMarketEndpoint contract
+ */
+async function upgradeContract() {
+    console.log('Upgrading ProofMarket contract...');
+    const [owner] = await ethers.getSigners();
+    const ProofMarket = await ethers.getContractFactory('ProofMarketEndpoint', owner);
+    try {
+        await upgrades.upgradeProxy(proofMarketAddress, ProofMarket);
+        console.log('ProofMarket contract upgraded successfully');
+    } catch (error) {
+        console.error('Upgrade failed:', error);
+    }
+}
+
+/**
+ * Get balances of the contract's owner and relayer
+ */
+async function getBalance() {
+    const [signer, relayer] = await ethers.getSigners();
+    console.log(`Signer: ${signer.address}`);
+    const balance = await signer.getBalance();
+    console.log(`Balance: ${ethers.utils.formatEther(balance)} ETH`);
+
+    console.log(`Relayer: ${relayer.address}`);
+    const relayerBalance = await relayer.getBalance();
+    console.log(`Balance: ${ethers.utils.formatEther(relayerBalance)} ETH`);
+}
+
+
+task("addStatement", "Add a new statement to the ProofMarket contract")
+    .addParam("statementId", "The statement ID to add")
+    .addParam("verifiers", "The verifiers to add as a comma-separated list")
+    .setAction(async (taskArgs, hre) => {
+        try {
+            const verifiers = taskArgs.verifiers.split(',');
+            await addStatement(taskArgs.statementId, verifiers);
+        } catch (error) {
+            console.error(error);
         }
-    )
-    .command(
-        'updateStatementVerifiers',
-        'Update verifiers for a statement',
-        {
-            statementId: {
-                type: 'string',
-                demandOption: true,
-                describe: 'Statement ID for the statement',
-            }
-        },
-        async (argv) => {
-            try {
-                const proofMarket = await getProofMarket(argv.keystoreFile, argv.password, argv.providerUrl);
-                await updateStatementVerifiers(proofMarket, argv.statementId);
-                process.exit(0);
-            } catch (error) {
-                console.error(error);
-                process.exit(1);
-            }
+    });
+
+task("updateStatementVerifiers", "Update verifiers for an existing statement in the ProofMarket contract")
+    .addParam("statementId", "The statement ID to update")
+    .addParam("verifiers", "The verifiers to add as a comma-separated list")
+    .setAction(async (taskArgs, hre) => {
+        try {
+            const verifiers = taskArgs.verifiers.split(',');
+            console.log('Updating statement verifiers: ', verifiers);
+            await updateStatementVerifiers(taskArgs.statementId, verifiers);
+        } catch (error) {
+            console.error(error);
+      }
+    });
+
+task("upgradeContract", "Upgrade the deployed contract")
+    .setAction(async (taskArgs, hre) => {
+        try {
+            await upgradeContract();
+        } catch (error) {
+            console.error(error);
         }
-    )
-    .demandCommand(1, 'You need to specify a command')
-    .help()
-    .argv;
+    });
+
+task("deployContract", "Deploy the contract")
+    .setAction(async (taskArgs, hre) => {
+        try {
+            await deployContract();
+        } catch (error) {
+            console.error(error);
+        }
+    });
+
+task("getBalance", "Get balances")
+    .setAction(async (taskArgs, hre) => {
+        try {
+            await getBalance();
+        } catch (error) {
+            console.error(error);
+        }
+    });
+
+module.exports = {
+    addStatement,
+    updateStatementVerifiers,
+    upgradeContract,
+    deployContract,
+    getBalance,
+};

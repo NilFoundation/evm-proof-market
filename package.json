@@ -1,8 +1,8 @@
 {
   "name": "proof-market-endpoint",
   "devDependencies": {
-    "@nilfoundation/evm-mina-state": "github:nilfoundation/mina-state-proof",
     "@nilfoundation/evm-lorem-ipsum": "github:nilfoundation/evm-lorem-ipsum",
+    "@nilfoundation/evm-mina-state": "github:nilfoundation/mina-state-proof",
     "@nilfoundation/evm-placeholder-verification": "^1.0.14",
     "@nomicfoundation/hardhat-toolbox": "^2.0.2",
     "@nomiclabs/hardhat-ethers": "^2.2.2",
@@ -22,6 +22,7 @@
     "@openzeppelin/contracts": "^4.8.2",
     "@openzeppelin/contracts-upgradeable": "^4.8.3",
     "hardhat-storage-layout": "^0.1.7",
-    "lossless-json": "^2.0.9"
+    "lossless-json": "^2.0.9",
+    "tree-kill": "^1.2.2"
   }
 }

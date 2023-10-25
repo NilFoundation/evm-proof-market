@@ -7,6 +7,12 @@ require('hardhat-storage-layout');
 require("hardhat-deploy");
 require('hardhat-deploy-ethers')
 require("hardhat-contract-sizer");
+require('dotenv').config()
+require('./scripts/maintain.js')
+
+const ALCHEMY_URL = "https://eth-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY;
+const owner = process.env.OWNER_PRIVATE_KEY;
+const relayer = process.env.RELAYER_PRIVATE_KEY;
 
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -24,7 +30,7 @@ module.exports = {
     deployer: {
       default: 0,
     },
-    tokenOwner: {
+    relayer: {
       default: 1,
     },
     user: {
@@ -32,9 +38,6 @@ module.exports = {
     },
     producer: {
       default: 3,
-    },
-    relayer: {
-      default: 4,
     }
   },
   mocha: {
@@ -44,6 +47,11 @@ module.exports = {
     hardhat: {
       blockGasLimit: 100_000_000,
     },
+    sepolia: {
+      url: ALCHEMY_URL,
+      accounts: [owner, relayer],
+      timeout: 60000
+    }
   },
   gasReporter: {
     currency: "USD",
